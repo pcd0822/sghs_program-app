@@ -52,10 +52,13 @@ async function token(sid: string): Promise<string> {
   const custom = await getAuth().createCustomToken(`s_${sid}`, { role: 'student', sid, classNo: Number(sid.slice(1, 3)), qa: 'loadtest' });
   const res = await fetch(`${AUTH}/accounts:signInWithCustomToken?key=${apiKey}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    // 실서버 API 키는 우리 웹사이트에서 온 요청만 받도록 묶여 있어 사이트 주소를 밝힌다
+    headers: { 'content-type': 'application/json', referer: 'https://sghs-program-app.web.app/' },
     body: JSON.stringify({ token: custom, returnSecureToken: true }),
   });
-  return ((await res.json()) as { idToken: string }).idToken;
+  const body = (await res.json()) as { idToken?: string; error?: { message: string } };
+  if (!body.idToken) throw new Error(`시험용 로그인 토큰을 받지 못했어요: ${body.error?.message ?? res.status}`);
+  return body.idToken;
 }
 
 interface Res {

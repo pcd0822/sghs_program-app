@@ -60,6 +60,8 @@ npm run dev                 # http://localhost:5173
    `688874637790-compute@developer.gserviceaccount.com`(Default compute service account) 연필 → 역할 추가 → **서비스 계정 토큰 생성자** → 저장.
    그리고 [IAM Service Account Credentials API](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com?project=sghs-program-app) **사용** 클릭.
    (이걸 안 하면 배포 후 로그인 때 토큰 발급 권한 오류가 난다)
+   ※ IAM 목록에 이 계정이 **없으면** 아직 만들어지지 않은 것이다. [Compute Engine API](https://console.cloud.google.com/apis/library/compute.googleapis.com?project=sghs-program-app)
+   에서 **사용**을 누르고 1~2분 뒤 IAM 페이지를 새로고침하면 생긴다(서버 기능을 처음 배포할 때도 자동으로 생긴다).
 6. **서비스 계정 키(초기 자료 등록용)** — 프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성 → 받은 파일을 `seed/service-account.json` 으로 저장.
    이 파일은 관리자 열쇠와 같으므로 **절대 다른 곳에 올리지 않는다**(seed/ 는 깃허브에 안 올라감). 운영이 끝나면 콘솔에서 키를 삭제한다.
 7. **예산 알림** — [Google Cloud 결제 → 예산 및 알림](https://console.cloud.google.com/billing/budgets) → 예산 만들기 →

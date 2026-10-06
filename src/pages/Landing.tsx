@@ -44,7 +44,7 @@ export default function Landing() {
           <br />
           하고 싶은 걸
           <br />
-          <span className="text-gradient">지금 골라요</span>
+          <span className="text-gradient">Take your pick</span>
         </h1>
         <p className="mt-4 text-[15px] text-sub">11.30.(월) ~ 12.11.(금) · 체험 · 특강 · 공연</p>
         <Button className="mt-8" onClick={() => setChoose(true)}>

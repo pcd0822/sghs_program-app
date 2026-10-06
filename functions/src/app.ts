@@ -9,7 +9,8 @@ import { REGION } from '../../shared/constants';
 
 // 모든 함수는 서울 지역. 신청 기간에 몰리는 함수는 아래 HOT 설정을 따로 쓴다.
 // 함수 정의보다 먼저 실행되도록 모든 함수 파일이 처음 불러오는 이 파일에 둔다.
-setGlobalOptions({ region: REGION, memory: '256MiB', maxInstances: 20 });
+// invoker public: 브라우저에서 바로 부를 수 있게(로그인·권한 검사는 각 함수 안에서 한다)
+setGlobalOptions({ region: REGION, memory: '256MiB', maxInstances: 20, invoker: 'public' });
 
 /**
  * 신청 기간에 몰리는 함수(로그인·신청·취소·제출) 설정.
