@@ -47,8 +47,10 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if false;
     }
+    // 교사 코드: admin 만 읽기(교사 관리 화면). 쓰기는 Functions 만.
     match /teacherSecrets/{tid} {
-      allow read, write: if false;
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     // 학생 한 명의 신청 목록 전체(문서 1개)

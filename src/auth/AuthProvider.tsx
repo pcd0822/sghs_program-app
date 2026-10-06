@@ -1,9 +1,11 @@
 import { onIdTokenChanged, signInWithCustomToken, signOut, type User } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Claims } from '@shared/types';
 import { call } from '@/lib/call';
 import { deviceId } from '@/lib/device';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { useToast } from '@/ui/Toast';
 
 interface Session {
   user: User;
@@ -36,6 +38,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }),
     [],
   );
+
+  // 교사의 담당학급·관리권한이 바뀌거나 삭제되면 로그인 정보(토큰)가 옛 권한이므로 로그아웃시킨다.
+  const toast = useToast();
+  const tid = session?.claims.role === 'teacher' ? session.claims.tid : null;
+  const homeroom = session?.claims.role === 'teacher' ? session.claims.homeroom : null;
+  const admin = session?.claims.role === 'teacher' ? session.claims.admin : false;
+  useEffect(() => {
+    if (!tid) return;
+    return onSnapshot(doc(db, 'teachers', tid), (snap) => {
+      const t = snap.data();
+      const changed = !snap.exists() || (t?.homeroom ?? null) !== homeroom || (t?.isAdmin === true) !== admin;
+      if (changed) {
+        toast('선생님의 권한 정보가 바뀌었어요. 다시 로그인해 주세요.', 'info');
+        void signOut(auth);
+      }
+    });
+  }, [tid, homeroom, admin, toast]);
 
   const value = useMemo<AuthValue>(
     () => ({

@@ -16,13 +16,15 @@
     "test:login": "tsx scripts/test-login.ts",
     "test:apply": "tsx scripts/test-apply.ts",
     "test:teacher": "tsx scripts/test-teacher.ts",
+    "test:admin": "tsx scripts/test-admin.ts",
     "emu:period": "tsx scripts/emu-period.ts"
   },
   "dependencies": {
     "firebase": "^12.19.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -35,7 +37,6 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vite": "^8.3.3",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "vite": "^8.3.3"
   }
 }

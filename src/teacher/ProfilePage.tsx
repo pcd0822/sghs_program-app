@@ -1,5 +1,6 @@
-// 교사 프로필. 사진 수정은 5단계, 관리자 대시보드는 4단계에서 연결한다.
+// 교사 프로필. 사진 수정은 5단계에서. admin 은 대시보드로 들어가는 버튼.
 
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/ui/Button';
 import { Pill } from '@/ui/Pill';
@@ -25,7 +26,12 @@ export default function ProfilePage() {
         </div>
       </div>
       {isAdmin && (
-        <div className="mt-6 rounded-2xl bg-brand-50 px-4 py-3 text-[14px] font-semibold text-brand-700">🛠️ 관리자 대시보드는 다음 단계에서 이 자리에 열려요.</div>
+        <Link
+          to="/admin"
+          className="mt-6 flex min-h-14 items-center gap-3 rounded-3xl bg-gradient-to-r from-brand-600 to-coral-500 px-5 text-[17px] font-bold text-white shadow-lg active:scale-[0.99]"
+        >
+          🛠️ <span className="flex-1">관리자 대시보드</span> ›
+        </Link>
       )}
       <div className="mt-8">
         <Button variant="ghost" onClick={() => logout()}>

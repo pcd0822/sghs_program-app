@@ -281,7 +281,7 @@ function DetailAction({ c }: { c: Course }) {
     return (
       <div className="flex items-center gap-3">
         <span className="flex-1 text-[15px] font-bold text-emerald-600">✅ 신청 완료</span>
-        <Button variant="ghost" className="w-auto! px-6" loading={loading} disabled={!!busy || !!win} onClick={() => cancel(c)}>
+        <Button variant="ghost" className="w-auto! shrink-0 px-6" loading={loading} disabled={!!busy || !!win} onClick={() => cancel(c)}>
           신청 취소
         </Button>
       </div>
