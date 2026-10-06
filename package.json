@@ -18,7 +18,16 @@
     "test:teacher": "tsx scripts/test-teacher.ts",
     "test:admin": "tsx scripts/test-admin.ts",
     "test:board": "tsx scripts/test-board.ts",
-    "emu:period": "tsx scripts/emu-period.ts"
+    "test:load": "tsx scripts/load-test.ts",
+    "icons": "tsx scripts/make-icons.ts",
+    "emu:period": "tsx scripts/emu-period.ts",
+    "build:prod": "node scripts/check-env.mjs && tsc -b && vite build",
+    "deploy": "firebase deploy --project sghs-program-app",
+    "deploy:functions": "firebase deploy --only functions --project sghs-program-app",
+    "deploy:rules": "firebase deploy --only firestore,storage --project sghs-program-app",
+    "purge": "tsx scripts/purge-test-data.ts",
+    "export": "tsx scripts/export-all.ts",
+    "test:all": "npm run test:login && npm run test:apply && npm run test:teacher && npm run test:admin && npm run test:board && npm run test:load"
   },
   "dependencies": {
     "dompurify": "^3.4.16",
@@ -37,6 +46,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "firebase-admin": "^14.5.0",
     "firebase-tools": "^15.32.1",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",

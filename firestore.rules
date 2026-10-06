@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // 권한 정보는 로그인 토큰(커스텀 토큰 claims)에 들어 있다.
-//   학생: role='student', sid, classNo
+//   학생: role='student', sid, classNo, qa(문의 게시판 별칭 — studentAliases 에 보관, 아무도 직접 못 읽음)
 //   교사: role='teacher', tid, homeroom(null|0|1~9), admin
 // 신청 내역·인원 수·제출 상태·출결은 브라우저에서 쓸 수 없고 Cloud Functions(관리자 권한)만 쓴다.
 service cloud.firestore {
@@ -97,7 +97,7 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // 그 밖(loginGuards 등)은 모두 차단.
+    // 그 밖(loginGuards, studentAliases 등)은 모두 차단.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -7,7 +7,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { LOGIN_GUARD } from '../../shared/constants';
 import { normalizeName, parseSid, phoneDigits } from '../../shared/text';
 import type { Claims } from '../../shared/types';
-import { auth, db, fail } from './app';
+import { auth, db, fail, HOT } from './app';
 import { assertNotLocked, hash, readCaller, recordFail, resetGuard } from './guard';
 
 export const studentUid = (sid: string) => `s_${sid}`;
@@ -15,7 +15,7 @@ export const teacherUid = (tid: string) => `t_${tid}`;
 
 const MISMATCH = '입력한 정보가 등록된 정보와 일치하지 않아요. 학번·이름·연락처를 다시 확인해 주세요.';
 
-export const loginStudent = onCall(async (req) => {
+export const loginStudent = onCall(HOT, async (req) => {
   const { sid: rawSid, name, phone, deviceId } = (req.data ?? {}) as Record<string, unknown>;
   const caller = readCaller(req, deviceId);
   const guard = { scope: 'stu', key: caller.deviceKey };
@@ -59,11 +59,13 @@ export const loginStudent = onCall(async (req) => {
   }
 
   await resetGuard(guard.scope, guard.key);
-  // 문의 게시판 별칭: 처음 로그인할 때 한 번 만들어 둔다
-  let qa = typeof stu.qaAlias === 'string' ? stu.qaAlias : '';
+  // 문의 게시판 별칭: 처음 로그인할 때 한 번 만들어 둔다. 담임도 읽을 수 없는 별도 문서에 둔다
+  // (학생 문서에 두면 담임이 별칭으로 공개 글 작성자를 알아낼 수 있으므로).
+  const aliasRef = db.collection('studentAliases').doc(parsed.sid);
+  let qa = String((await aliasRef.get()).get('qa') ?? '');
   if (!qa) {
     qa = randomBytes(9).toString('base64url');
-    await db.collection('students').doc(parsed.sid).update({ qaAlias: qa });
+    await aliasRef.set({ qa });
   }
   const claims: Claims = { role: 'student', sid: parsed.sid, classNo: parsed.classNo, qa };
   const token = await auth.createCustomToken(studentUid(parsed.sid), claims);

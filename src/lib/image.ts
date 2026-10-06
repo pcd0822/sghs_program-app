@@ -1,7 +1,6 @@
 // 이미지를 올리기 전에 기기에서 작게 줄인다(긴 변 maxSide 이하, webp).
 
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { storage } from './firebase';
+import { getStorageLazy } from './firebase';
 
 export async function resizeImage(file: File, maxSide: number, quality = 0.85): Promise<Blob> {
   if (!file.type.startsWith('image/')) throw new Error('이미지 파일만 올릴 수 있어요.');
@@ -22,6 +21,7 @@ export async function resizeImage(file: File, maxSide: number, quality = 0.85): 
 /** 줄인 뒤 Storage 에 올리고 주소를 돌려준다. */
 export async function uploadImage(path: string, file: File, maxSide: number): Promise<string> {
   const blob = await resizeImage(file, maxSide);
+  const [storage, { ref, uploadBytes, getDownloadURL }] = await Promise.all([getStorageLazy(), import('firebase/storage')]);
   const r = ref(storage, path);
   await uploadBytes(r, blob, { contentType: 'image/webp', cacheControl: 'public, max-age=31536000' });
   return getDownloadURL(r);

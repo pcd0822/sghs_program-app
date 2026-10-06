@@ -58,3 +58,15 @@
 - 단계(1 뼈대·로그인 → 2 학생 → 3 교사 → 4 admin → 5 문의·공지·프로필·가입 → 6 보안·부하시험·배포)별로 구현, 끝날 때마다 실행 방법 안내 후 커밋.
 - 커밋 전 `npm run typecheck`, `npm run functions:build` 통과 확인.
 - UI 글자는 한국어, 한글 가독성(Pretendard, keep-all). 누르는 영역 44px 이상.
+
+## 5·6단계에서 더한 규칙
+- 문의 게시판: 공개 글에 학번이 드러나지 않게 작성자는 별칭(`qa` claim, `studentAliases/{학번}` 서버 전용)으로만 저장.
+  실제 작성자는 `inquiryAuthors`(admin 전용). 문의·공지 쓰기는 모두 Functions(`board.ts`).
+- 공지 본문은 마크다운 + `<span style="color|font-family">` 만. 보여줄 때 반드시 `renderMarkdown`(DOMPurify)를 거친다.
+- 프로필 사진은 `profiles/{uid}/` 에 올리고 `updateProfile` 이 학생 문서·출석부 복사본(enrollments.photoUrl)까지 갱신.
+- 몰리는 함수(loginStudent·applyCourse·cancelCourse·submitApplication)는 `HOT` 옵션: concurrency 80, 최대 30대,
+  최소 인스턴스는 `functions/.env` 의 `HOT_MIN_INSTANCES`(평소 0, 여는 날만 1~2).
+- applyCourse 는 정원이 이미 찬 강좌를 트랜잭션 전에 바로 FULL 로 돌려보낸다(최종 판정은 트랜잭션).
+- 실서버 빌드는 `.env.production.local` 필수 — `scripts/check-env.mjs` 가 시험장 설정이 섞이면 막는다(hosting predeploy).
+- 운영 스크립트: `purge`(시험 자료 삭제), `export`(전체 xlsx 보관), `test:load -- --prod --yes`(실서버 동시 시험, 학생 공개 전만).
+- 첫 화면을 가볍게: 학생·교사·admin 화면, Storage, 엑셀, 마크다운은 필요할 때 불러온다(lazy).

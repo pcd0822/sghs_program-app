@@ -1,13 +1,23 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { defineInt } from 'firebase-functions/params';
 import { setGlobalOptions } from 'firebase-functions/v2';
+import type { CallableOptions } from 'firebase-functions/v2/https';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { REGION } from '../../shared/constants';
 
-// 모든 함수는 서울 지역. 신청 기간용 최소 인스턴스·동시 처리 수는 6단계에서 함수별로 지정한다.
+// 모든 함수는 서울 지역. 신청 기간에 몰리는 함수는 아래 HOT 설정을 따로 쓴다.
 // 함수 정의보다 먼저 실행되도록 모든 함수 파일이 처음 불러오는 이 파일에 둔다.
 setGlobalOptions({ region: REGION, memory: '256MiB', maxInstances: 20 });
+
+/**
+ * 신청 기간에 몰리는 함수(로그인·신청·취소·제출) 설정.
+ * - HOT_MIN_INSTANCES: 미리 켜 둘 서버 수. 평소 0(비용 없음), 신청 여는 날만 1~2로 올려 배포한다(functions/.env).
+ * - concurrency 80: 서버 한 대가 동시에 80건까지 처리 → 최대 30대면 2,400건 동시 처리.
+ */
+const HOT_MIN_INSTANCES = defineInt('HOT_MIN_INSTANCES', { default: 0 });
+export const HOT: CallableOptions = { minInstances: HOT_MIN_INSTANCES, concurrency: 80, cpu: 1, memory: '512MiB', maxInstances: 30, timeoutSeconds: 30 };
 
 initializeApp();
 

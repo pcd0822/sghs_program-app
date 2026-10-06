@@ -34,3 +34,6 @@ Thumbs.db
 
 # 참고용 타사 앱 캡처 — 저장소에 올리지 않음
 design-ref/
+
+# functions/.env 는 비밀 값이 아닌 배포 설정(최소 인스턴스 수)이라 올린다
+!functions/.env

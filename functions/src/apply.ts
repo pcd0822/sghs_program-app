@@ -11,7 +11,7 @@ import { COUNTER_SHARDS } from '../../shared/constants';
 import { checkPersonalRules, checkWindow, missingText, progress, type AppItem, type Application } from '../../shared/rules';
 import { formatDate } from '../../shared/text';
 import type { Course, PeriodConfig } from '../../shared/types';
-import { db, fail } from './app';
+import { db, fail, HOT } from './app';
 import { refreshAttendanceViewers } from './attendance';
 
 function requireStudent(req: CallableRequest): { sid: string; classNo: number } {
@@ -39,11 +39,16 @@ export const shardRef = (courseId: string): DocumentReference =>
 
 const TX = { maxAttempts: 10 };
 
-export const applyCourse = onCall(async (req) => {
+export const applyCourse = onCall(HOT, async (req) => {
   const { sid, classNo } = requireStudent(req);
   const courseId = readCourseId(req.data);
   const confirmSelfPay = (req.data as { confirmSelfPay?: unknown }).confirmSelfPay === true;
   const r = refs(sid, courseId);
+
+  // 이미 정원이 찬 강좌는 트랜잭션(강좌 문서 잠금 줄서기)에 들어가기 전에 바로 돌려보낸다.
+  // 신청이 몰릴 때 마감된 강좌로 오는 요청이 다른 요청의 차례를 막지 않게 하려는 것. 최종 판정은 아래 트랜잭션.
+  const pre = (await r.course.get()).data() as Course | undefined;
+  if (pre && pre.capacity !== null && pre.count >= pre.capacity) fail('아쉽게도 정원이 다 찼어요.', 'failed-precondition', 'FULL');
 
   const res = await db.runTransaction(async (tx) => {
     const [appSnap, courseSnap, periodSnap, stuSnap] = await tx.getAll(r.app, r.course, r.period, r.student);
@@ -105,7 +110,7 @@ export const applyCourse = onCall(async (req) => {
   return { ok: true, already: res.already };
 });
 
-export const cancelCourse = onCall(async (req) => {
+export const cancelCourse = onCall(HOT, async (req) => {
   const { sid } = requireStudent(req);
   const courseId = readCourseId(req.data);
   const r = refs(sid, courseId);
@@ -133,7 +138,7 @@ export const cancelCourse = onCall(async (req) => {
   return { ok: true, already: res.already };
 });
 
-export const submitApplication = onCall(async (req) => {
+export const submitApplication = onCall(HOT, async (req) => {
   const { sid } = requireStudent(req);
   // 강좌 목록은 트랜잭션 밖에서 읽는다(40여 개 문서에 잠금을 걸지 않으려고).
   const courses = (await db.collection('courses').get()).docs.map((d) => ({ ...(d.data() as Course), id: d.id }));

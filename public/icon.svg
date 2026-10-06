@@ -7,5 +7,11 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <text x="256" y="330" font-size="260" text-anchor="middle" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">🎟️</text>
+  <!-- 기울어진 티켓: 양옆 반원 홈 + 점선 -->
+  <g transform="rotate(-12 256 256)">
+    <path d="M120 176h272a16 16 0 0 1 16 16v36a28 28 0 0 0 0 56v36a16 16 0 0 1-16 16H120a16 16 0 0 1-16-16v-36a28 28 0 0 0 0-56v-36a16 16 0 0 1 16-16z" fill="#fff"/>
+    <path d="M322 196v120" stroke="#fb7185" stroke-width="8" stroke-linecap="round" stroke-dasharray="2 18"/>
+    <circle cx="214" cy="256" r="34" fill="#7c3aed"/>
+    <path d="M200 256l10 10 20-22" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>

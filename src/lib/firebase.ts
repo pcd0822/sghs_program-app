@@ -2,7 +2,6 @@ import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, initializeFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
-import { connectStorageEmulator, getStorage } from 'firebase/storage';
 import { REGION } from '@shared/constants';
 
 export const USE_EMULATORS = import.meta.env.VITE_USE_EMULATORS === 'true';
@@ -26,12 +25,21 @@ export const auth = getAuth(app);
 // 학교 와이파이·통신사 프록시에서 실시간 연결이 끊기는 경우를 대비해 연결 방식을 자동으로 고른다.
 export const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 export const functions = getFunctions(app, REGION);
-export const storage = getStorage(app);
 
 if (USE_EMULATORS) {
   const host = location.hostname; // 휴대폰으로 같은 와이파이에서 접속할 때도 동작하도록
   connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
   connectFirestoreEmulator(db, host, 8080);
   connectFunctionsEmulator(functions, host, 5001);
-  connectStorageEmulator(storage, host, 9199);
+}
+
+/** Storage(사진 올리기)는 쓸 때만 불러온다 — 첫 화면을 가볍게 */
+let storagePromise: Promise<import('firebase/storage').FirebaseStorage> | null = null;
+export function getStorageLazy() {
+  storagePromise ??= import('firebase/storage').then(({ getStorage, connectStorageEmulator }) => {
+    const st = getStorage(app);
+    if (USE_EMULATORS) connectStorageEmulator(st, location.hostname, 9199);
+    return st;
+  });
+  return storagePromise;
 }
