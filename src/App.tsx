@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import Landing from '@/pages/Landing';
 import { StudentLogin, TeacherLogin } from '@/pages/Login';
 import { SignedInHome, Signup } from '@/pages/Placeholder';
+import StudentApp from '@/student/StudentApp';
 import { ToastProvider } from '@/ui/Toast';
 
 function AppRoutes() {
@@ -31,7 +32,7 @@ function AppRoutes() {
   const home = session.claims.role === 'student' ? '/s' : '/t';
   return (
     <Routes>
-      <Route path="/s/*" element={session.claims.role === 'student' ? <SignedInHome /> : <Navigate to={home} replace />} />
+      <Route path="/s/*" element={session.claims.role === 'student' ? <StudentApp /> : <Navigate to={home} replace />} />
       <Route path="/t/*" element={session.claims.role === 'teacher' ? <SignedInHome /> : <Navigate to={home} replace />} />
       <Route path="*" element={<Navigate to={home} replace />} />
     </Routes>

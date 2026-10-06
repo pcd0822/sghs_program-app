@@ -3,7 +3,7 @@
 고3 수능 이후(2026.11.30.~12.11.) 프로그램 수강신청과 출결을 위한 웹앱.
 React + Vite + TypeScript + Tailwind / Firebase(Firestore · Functions · Auth · Storage · Hosting, 서울 지역).
 
-> 진행 단계: **1단계(뼈대 · 초기 자료 등록 · 로그인) 완료.** 배포 방법과 운영 전 점검표는 6단계에서 이 문서에 채운다.
+> 진행 단계: **1단계(뼈대 · 로그인) · 2단계(학생 수강신청 · 시간표) 완료.** 배포 방법과 운영 전 점검표는 6단계에서 이 문서에 채운다.
 
 ## 처음 한 번 준비
 1. Node.js 22 이상, Java 21 (에뮬레이터용 — `winget install Microsoft.OpenJDK.21`)
@@ -12,6 +12,9 @@ React + Vite + TypeScript + Tailwind / Firebase(Firestore · Functions · Auth �
 4. `seed/수강신청DB.xlsx` 를 넣는다(깃허브에 올라가지 않음).
 
 ## 내 컴퓨터에서 실행 (터미널 2개)
+> Windows PowerShell 에서 `npm` 이 "스크립트를 실행할 수 없으므로…" 오류를 내면 `npm` 대신 **`npm.cmd`** 로 입력한다.
+> (예: `npm.cmd run emu`) 명령 프롬프트(cmd)나 VS Code 의 Git Bash 터미널에서는 `npm` 그대로 된다.
+
 ```bash
 # 터미널 1 — 파이어베이스 시험장(에뮬레이터)
 npm run functions:build
@@ -24,6 +27,8 @@ npm run dev             # http://localhost:5173
 ```
 - 시험장 관리 화면: http://127.0.0.1:4000 (저장된 자료를 눈으로 볼 수 있음)
 - 로그인 자동 시험: `npm run test:login`
+- 수강신청 규칙 자동 시험: `npm run test:apply` (시험장의 신청 자료를 지우고 시작함)
+- 신청 기간 바꾸기(대시보드 전 임시): `npm run emu:period -- open` / `closed` / `soon`(1분 뒤 열림)
 - 시험장은 끄면 자료가 사라진다. 다시 켜면 `seed:emu` 부터.
 
 ## 초기 자료 등록 스크립트

@@ -34,6 +34,10 @@ const BY_KEYWORD: [RegExp, string][] = [
   [/공연|콘서트|음악/, '🎵'],
 ];
 
+export function courseEmoji(type: string, name: string): string {
+  return BY_KEYWORD.find(([re]) => re.test(name))?.[1] ?? (BY_TYPE[type] ?? FALLBACK).emoji;
+}
+
 /** 같은 유형이어도 강좌마다 살짝 다른 색이 나오도록 이름으로 각도를 정한다. */
 function angle(seed: string): number {
   let h = 0;
@@ -55,7 +59,7 @@ export function CourseThumb({ type, name, url, className = '', emojiClass = 'tex
     return <img src={url} alt="" loading="lazy" className={`object-cover ${className}`} />;
   }
   const t = BY_TYPE[type] ?? FALLBACK;
-  const emoji = BY_KEYWORD.find(([re]) => re.test(name))?.[1] ?? t.emoji;
+  const emoji = courseEmoji(type, name);
   return (
     <div
       className={`grid place-items-center ${className}`}

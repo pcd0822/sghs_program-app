@@ -4,39 +4,19 @@ import { Link } from 'react-router-dom';
 import type { Course } from '@shared/types';
 import { db } from '@/lib/firebase';
 import { Button } from '@/ui/Button';
-import { CourseThumb } from '@/ui/CourseThumb';
+import { courseEmoji } from '@/ui/CourseThumb';
 import { Sheet } from '@/ui/Sheet';
-
-/** 떠 있는 썸네일 자리: 위치(%)·크기(px)·기울기(deg)·흔들림 지연(s) */
-const SLOTS = [
-  { top: 6, left: -6, size: 104, rot: -9, delay: 0 },
-  { top: 3, left: 40, size: 92, rot: 7, delay: 1.2 },
-  { top: 15, left: 72, size: 112, rot: -5, delay: 0.6 },
-  { top: 27, left: 14, size: 120, rot: 6, delay: 2.1 },
-  { top: 33, left: 55, size: 98, rot: -10, delay: 1.6 },
-  { top: 49, left: -4, size: 96, rot: 10, delay: 0.3 },
-  { top: 50, left: 72, size: 104, rot: 8, delay: 2.6 },
-  { top: 52, left: 34, size: 84, rot: -4, delay: 1.0 },
-];
-
-type Tile = Pick<Course, 'id' | 'type' | 'name' | 'thumbnailUrl'>;
+import { EmojiPops } from './EmojiPops';
 
 export default function Landing() {
-  const [tiles, setTiles] = useState<Tile[]>([]);
+  const [emojis, setEmojis] = useState<string[]>([]);
   const [choose, setChoose] = useState(false);
 
   useEffect(() => {
+    // 강좌에서 이모지 종류만 뽑는다(로그인 전에도 읽을 수 있는 공개 자료).
     getDocs(collection(db, 'courses'))
-      .then((snap) => {
-        // 같은 프로그램은 한 번만, 썸네일 있는 강좌를 앞으로
-        const seen = new Set<string>();
-        const list = snap.docs
-          .map((d) => d.data() as Course)
-          .sort((a, b) => Number(!!b.thumbnailUrl) - Number(!!a.thumbnailUrl) || a.order - b.order)
-          .filter((c) => !seen.has(c.code) && seen.add(c.code));
-        setTiles(list.slice(0, SLOTS.length));
-      })
-      .catch(() => setTiles([]));
+      .then((snap) => setEmojis([...new Set(snap.docs.map((d) => courseEmoji((d.data() as Course).type, (d.data() as Course).name)))]))
+      .catch(() => setEmojis([]));
   }, []);
 
   return (
@@ -52,29 +32,9 @@ export default function Landing() {
       />
       <div className="absolute inset-x-0 top-[48%] h-[22%] bg-gradient-to-b from-transparent to-white" aria-hidden />
 
-      {/* 기울어져 떠 있는 강좌 썸네일 */}
-      <div className="relative h-[58dvh] min-h-[340px]" aria-hidden>
-        {SLOTS.map((s, i) => {
-          const t = tiles[i];
-          return (
-            <div
-              key={i}
-              className="animate-float absolute"
-              style={{ top: `${s.top}%`, left: `${s.left}%`, animationDelay: `${s.delay}s` }}
-            >
-              <div
-                className="overflow-hidden rounded-[22px] border-[5px] border-white bg-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.25)]"
-                style={{ width: s.size, height: s.size, rotate: `${s.rot}deg` }}
-              >
-                {t ? (
-                  <CourseThumb type={t.type} name={t.name} url={t.thumbnailUrl} className="size-full" emojiClass="text-4xl" />
-                ) : (
-                  <div className="size-full animate-pulse bg-soft" />
-                )}
-              </div>
-            </div>
-          );
-        })}
+      {/* 이모지가 불규칙하게 나타났다 사라지는 자리 */}
+      <div className="relative h-[54dvh] min-h-[320px]">
+        <EmojiPops emojis={emojis} />
       </div>
 
       <section className="relative z-10 mt-auto px-6 pb-[max(env(safe-area-inset-bottom),28px)] text-center">

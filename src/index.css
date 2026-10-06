@@ -29,6 +29,14 @@
     from { opacity: 0; }
     to { opacity: 1; }
   }
+  /* 첫 화면 이모지: 톡 나타났다가 잠시 머문 뒤 위로 살짝 떠오르며 사라짐 */
+  @keyframes pop {
+    0% { opacity: 0; transform: scale(0.3) rotate(var(--rot)); }
+    14% { opacity: 1; transform: scale(1.12) rotate(var(--rot)); }
+    22% { transform: scale(1) rotate(var(--rot)); }
+    72% { opacity: 1; transform: scale(1) translateY(0) rotate(var(--rot)); }
+    100% { opacity: 0; transform: scale(0.85) translateY(-14px) rotate(var(--rot)); }
+  }
   @keyframes float {
     0%, 100% { translate: 0 0; }
     50% { translate: 0 -10px; }

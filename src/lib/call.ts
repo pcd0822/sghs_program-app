@@ -7,8 +7,11 @@ import { functions } from './firebase';
 const RETRYABLE = new Set(['functions/unavailable', 'functions/deadline-exceeded', 'functions/aborted', 'functions/internal']);
 
 export class CallError extends Error {
-  constructor(message: string, readonly code: string) {
+  /** 서버가 붙인 이유 코드(DUP_CODE, FULL 등). 화면이 알맞은 안내를 고르는 데 쓴다. */
+  readonly reason?: string;
+  constructor(message: string, readonly code: string, reason?: string) {
     super(message);
+    this.reason = reason;
   }
 }
 
@@ -38,7 +41,8 @@ export async function call<Req, Res>(name: string, data: Req, opts: CallOptions 
         );
       }
       // 서버가 보낸 안내 문구(한국어)는 그대로 보여준다.
-      throw new CallError(e instanceof Error ? e.message : '알 수 없는 오류가 났어요.', code);
+      const reason = e instanceof FunctionsError ? (e.details as { reason?: string } | undefined)?.reason : undefined;
+      throw new CallError(e instanceof Error ? e.message : '알 수 없는 오류가 났어요.', code, reason);
     }
   }
 }

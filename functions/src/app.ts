@@ -14,7 +14,9 @@ initializeApp();
 export const db = getFirestore();
 export const auth = getAuth();
 
-/** 학생에게 그대로 보여줄 수 있는 쉬운 말 오류. */
-export function fail(message: string, code: 'invalid-argument' | 'failed-precondition' | 'permission-denied' | 'not-found' | 'resource-exhausted' | 'already-exists' | 'unauthenticated' = 'failed-precondition'): never {
-  throw new HttpsError(code, message);
+type FailCode = 'invalid-argument' | 'failed-precondition' | 'permission-denied' | 'not-found' | 'resource-exhausted' | 'already-exists' | 'unauthenticated';
+
+/** 학생에게 그대로 보여줄 수 있는 쉬운 말 오류. reason 은 화면이 알맞은 안내(모달 등)를 고르는 데 쓴다. */
+export function fail(message: string, code: FailCode = 'failed-precondition', reason?: string): never {
+  throw new HttpsError(code, message, reason ? { reason } : undefined);
 }

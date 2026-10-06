@@ -13,7 +13,9 @@
     "seed:emu": "tsx scripts/seed.ts --emulator",
     "seed": "tsx scripts/seed.ts",
     "emu:phones": "tsx scripts/emu-phones.ts",
-    "test:login": "tsx scripts/test-login.ts"
+    "test:login": "tsx scripts/test-login.ts",
+    "test:apply": "tsx scripts/test-apply.ts",
+    "emu:period": "tsx scripts/emu-period.ts"
   },
   "dependencies": {
     "firebase": "^12.19.0",
