@@ -21,7 +21,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
               to={it.to}
               end={it.end}
               className={({ isActive }) =>
-                `flex min-h-13 min-w-[64px] flex-col items-center justify-center rounded-full px-3 text-[11px] font-semibold transition ${
+                `flex min-h-13 min-w-[58px] flex-col items-center justify-center rounded-full px-2.5 text-[11px] font-semibold transition ${
                   isActive ? 'bg-soft text-ink' : 'text-sub hover:text-ink'
                 }`
               }

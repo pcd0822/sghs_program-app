@@ -3,7 +3,7 @@
 고3 수능 이후(2026.11.30.~12.11.) 프로그램 수강신청과 출결을 위한 웹앱.
 React + Vite + TypeScript + Tailwind / Firebase(Firestore · Functions · Auth · Storage · Hosting, 서울 지역).
 
-> 진행 단계: **1단계(뼈대 · 로그인) · 2단계(학생 수강신청 · 시간표) 완료.** 배포 방법과 운영 전 점검표는 6단계에서 이 문서에 채운다.
+> 진행 단계: **1단계(뼈대 · 로그인) · 2단계(학생 수강신청 · 시간표) · 3단계(교사 화면 · 출결) 완료.** 배포 방법과 운영 전 점검표는 6단계에서 이 문서에 채운다.
 
 ## 처음 한 번 준비
 1. Node.js 22 이상, Java 21 (에뮬레이터용 — `winget install Microsoft.OpenJDK.21`)
@@ -28,6 +28,7 @@ npm run dev             # http://localhost:5173
 - 시험장 관리 화면: http://127.0.0.1:4000 (저장된 자료를 눈으로 볼 수 있음)
 - 로그인 자동 시험: `npm run test:login`
 - 수강신청 규칙 자동 시험: `npm run test:apply` (시험장의 신청 자료를 지우고 시작함)
+- 교사 권한·출결 공유 자동 시험: `npm run test:teacher` (시험장의 신청·출결 자료를 지우고 시작함)
 - 신청 기간 바꾸기(대시보드 전 임시): `npm run emu:period -- open` / `closed` / `soon`(1분 뒤 열림)
 - 시험장은 끄면 자료가 사라진다. 다시 켜면 `seed:emu` 부터.
 

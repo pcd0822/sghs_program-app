@@ -12,6 +12,7 @@ import { checkPersonalRules, checkWindow, missingText, progress, type AppItem, t
 import { formatDate } from '../../shared/text';
 import type { Course, PeriodConfig } from '../../shared/types';
 import { db, fail } from './app';
+import { refreshAttendanceViewers } from './attendance';
 
 function requireStudent(req: CallableRequest): { sid: string; classNo: number } {
   const t = req.auth?.token;
@@ -44,7 +45,7 @@ export const applyCourse = onCall(async (req) => {
   const confirmSelfPay = (req.data as { confirmSelfPay?: unknown }).confirmSelfPay === true;
   const r = refs(sid, courseId);
 
-  return db.runTransaction(async (tx) => {
+  const res = await db.runTransaction(async (tx) => {
     const [appSnap, courseSnap, periodSnap, stuSnap] = await tx.getAll(r.app, r.course, r.period, r.student);
     if (!courseSnap.exists) fail('없어진 강좌예요. 목록을 새로 확인해 주세요.', 'not-found', 'NOT_FOUND');
     const course = { ...(courseSnap.data() as Course), id: courseId };
@@ -55,7 +56,7 @@ export const applyCourse = onCall(async (req) => {
 
     const items = (appSnap.data() as Application | undefined)?.items ?? {};
     // 같은 요청이 두 번 도착한 경우(연타·재시도): 이미 신청돼 있으면 성공으로 본다.
-    if (items[courseId]) return { ok: true, already: true };
+    if (items[courseId]) return { already: true, date: course.date };
 
     const rule = checkPersonalRules(course, items);
     if (rule) fail(rule.message, 'failed-precondition', rule.code);
@@ -97,8 +98,11 @@ export const applyCourse = onCall(async (req) => {
       teacherIds: course.teacherIds ?? [],
       at: now,
     });
-    return { ok: true, already: false };
+    return { already: false, date: course.date };
   }, TX);
+  // 이미 출결 기록이 있는 날이면 담당 교사 출석부에도 보이도록 열람 교사 목록을 맞춘다.
+  if (!res.already) await refreshAttendanceViewers(res.date, sid);
+  return { ok: true, already: res.already };
 });
 
 export const cancelCourse = onCall(async (req) => {
@@ -106,10 +110,10 @@ export const cancelCourse = onCall(async (req) => {
   const courseId = readCourseId(req.data);
   const r = refs(sid, courseId);
 
-  return db.runTransaction(async (tx) => {
+  const res = await db.runTransaction(async (tx) => {
     const [appSnap, courseSnap, periodSnap] = await tx.getAll(r.app, r.course, r.period);
     const items = (appSnap.data() as Application | undefined)?.items ?? {};
-    if (!items[courseId]) return { ok: true, already: true };
+    if (!items[courseId]) return { already: true, date: '' };
 
     const course = courseSnap.exists ? { ...(courseSnap.data() as Course), id: courseId } : null;
     const now = Date.now();
@@ -123,8 +127,10 @@ export const cancelCourse = onCall(async (req) => {
     // 취소하면 제출 상태가 "미제출"로 돌아간다.
     tx.update(r.app, new FieldPath('items', courseId), FieldValue.delete(), 'submitted', false, 'submittedAt', null, 'updatedAt', now);
     tx.delete(r.enrollment);
-    return { ok: true, already: false };
+    return { already: false, date: items[courseId].date };
   }, TX);
+  if (!res.already) await refreshAttendanceViewers(res.date, sid);
+  return { ok: true, already: res.already };
 });
 
 export const submitApplication = onCall(async (req) => {

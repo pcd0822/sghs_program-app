@@ -17,6 +17,8 @@ export interface Block {
   sub?: string;
   emoji?: string;
   tone: BlockTone;
+  /** 같은 시간에 강좌가 많을 때(교사 시간표) 높이를 시간에 비례시키지 않는다 */
+  compact?: boolean;
   onClick?(): void;
 }
 
@@ -110,7 +112,7 @@ function DayCard({ date, blocks, extras, notes, today }: { date: string; blocks:
               type="button"
               onClick={b.onClick}
               disabled={!b.onClick}
-              style={{ minHeight: Math.max(56, (minutes(b.end) - minutes(b.start)) * 0.75) }}
+              style={{ minHeight: b.compact ? 48 : Math.max(56, (minutes(b.end) - minutes(b.start)) * 0.75) }}
               className={`flex flex-1 flex-col items-start rounded-2xl px-3.5 py-2.5 text-left ring-1 transition enabled:active:scale-[0.99] ${toneClass[b.tone]}`}
             >
               <span className="flex items-center gap-1.5 text-[15px] leading-snug font-bold">

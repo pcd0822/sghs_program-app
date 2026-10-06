@@ -15,6 +15,7 @@
     "emu:phones": "tsx scripts/emu-phones.ts",
     "test:login": "tsx scripts/test-login.ts",
     "test:apply": "tsx scripts/test-apply.ts",
+    "test:teacher": "tsx scripts/test-teacher.ts",
     "emu:period": "tsx scripts/emu-period.ts"
   },
   "dependencies": {

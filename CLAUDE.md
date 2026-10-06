@@ -20,7 +20,10 @@
 - 연락처 `studentSecrets`, 교사 코드 `teacherSecrets` — 브라우저에서 못 읽음(연락처는 본인·담임·전체담당·admin 예외).
 - 교사 문서 ID는 임의값(코드를 ID로 쓰지 않는다).
 - 권한은 토큰 claims: 학생 `{role:'student', sid, classNo}`, 교사 `{role:'teacher', tid, homeroom: null|0|1~9, admin}`. 역할이 바뀌면 refresh token 을 끊어 재로그인시킨다.
-- 출결은 `attendance/{날짜__학번}` 하나를 학급출결·교과수업출결이 함께 쓴다(Functions 경유, 변경 기록 남김).
+- 출결은 `attendance/{날짜__학번}` 하나를 학급출결·교과수업출결이 함께 쓴다(Functions `setAttendance` 경유, history 에 변경 기록).
+  교과 교사가 읽을 수 있도록 `viewerTeacherIds`(그날 그 학생 강좌의 담당 교사)를 같이 저장한다.
+- **복사본 동기화 의무**: `enrollments.teacherIds`·`enrollments.photoUrl`·`attendance.viewerTeacherIds` 는 복사본이다.
+  담당교사 배정 변경·수동 배정·프로필 사진 변경 시 반드시 함께 갱신(`refreshAttendanceViewers` 등). 교사 쿼리는 규칙 때문에 `array-contains tid` 조건을 꼭 넣는다.
 
 ## 수강신청 규칙 (모든 검사는 Functions 가 최종 기준, 화면은 미리 막기만)
 1. 분류 `필수` 강좌 전부 + 선택 강좌가 열리는 날짜마다 선택 1개. 날짜 목록은 강좌 자료에서 계산(하드코딩 금지).
