@@ -17,10 +17,13 @@
     "test:apply": "tsx scripts/test-apply.ts",
     "test:teacher": "tsx scripts/test-teacher.ts",
     "test:admin": "tsx scripts/test-admin.ts",
+    "test:board": "tsx scripts/test-board.ts",
     "emu:period": "tsx scripts/emu-period.ts"
   },
   "dependencies": {
+    "dompurify": "^3.4.16",
     "firebase": "^12.19.0",
+    "marked": "^18.1.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4",

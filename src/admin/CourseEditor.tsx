@@ -137,6 +137,7 @@ export function CourseEditor({ initial, isNew, onClose }: Props) {
         open
         onClose={onClose}
         title={isNew ? '강좌 추가' : '강좌 수정'}
+          wide
         footer={
           <div className="flex gap-2">
             {!isNew && (

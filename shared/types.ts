@@ -52,7 +52,8 @@ export interface Teacher {
 
 /** 로그인 토큰에 담기는 권한 정보. */
 export type Claims =
-  | { role: 'student'; sid: string; classNo: number }
+  /** qa: 문의 게시판 작성자 별칭(공개 글에 학번이 드러나지 않도록) */
+  | { role: 'student'; sid: string; classNo: number; qa: string }
   | { role: 'teacher'; tid: string; homeroom: number | null; admin: boolean };
 
 export interface FixedEvent {
@@ -85,4 +86,32 @@ export interface PeriodConfig {
   closeAt: number | null;
   /** auto: 시각대로, open: 즉시 열기, closed: 즉시 닫기 */
   mode: 'auto' | 'open' | 'closed';
+}
+
+/** inquiries/{id} — 문의 글과 [공지]. 작성자는 별칭만 저장하고 실제 학번은 inquiryAuthors 에(관리자만 읽음). */
+export interface Inquiry {
+  id: string;
+  title: string;
+  /** 마크다운(공지는 제한된 HTML 포함) */
+  body: string;
+  secret: boolean;
+  isNotice: boolean;
+  authorAlias: string;
+  /** 박○○ / 관리자 */
+  authorMasked: string;
+  createdAt: number;
+  updatedAt: number;
+  answered: boolean;
+  answer: string | null;
+  answeredAt: number | null;
+}
+
+/** signupRequests/{학번} — 명단에 없는 학생의 가입 신청 */
+export interface SignupRequest {
+  sid: string;
+  name: string;
+  phone: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: number;
+  reviewedAt: number | null;
 }

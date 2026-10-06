@@ -1,10 +1,10 @@
-// 교사 프로필. 사진 수정은 5단계에서. admin 은 대시보드로 들어가는 버튼.
+// 교사 프로필: 사진 수정. admin 은 대시보드로 들어가는 버튼.
 
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/ui/Button';
 import { Pill } from '@/ui/Pill';
-import { Avatar } from './attendance';
+import { PhotoEditor } from '@/profile/PhotoEditor';
 import { useTeacher } from './TeacherData';
 
 export default function ProfilePage() {
@@ -14,8 +14,7 @@ export default function ProfilePage() {
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
       <p className="pt-2 text-[14px] font-semibold text-sub">👤 프로필</p>
-      <div className="mt-6 flex items-center gap-4">
-        <Avatar url={me?.photoUrl} name={me?.name ?? '?'} size={80} />
+      <div className="mt-4">
         <div>
           <p className="text-[22px] font-extrabold">{me?.name ?? ''} 선생님</p>
           <div className="mt-1 flex flex-wrap gap-1">
@@ -25,6 +24,10 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      <section className="mt-5 rounded-3xl p-4 ring-1 ring-line">
+        <h2 className="mb-3 text-[15px] font-bold">프로필 사진</h2>
+        <PhotoEditor url={me?.photoUrl} name={me?.name ?? ''} />
+      </section>
       {isAdmin && (
         <Link
           to="/admin"

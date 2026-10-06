@@ -7,6 +7,7 @@ import { Sheet } from '@/ui/Sheet';
 import { useToast } from '@/ui/Toast';
 import { AdminDataProvider, useAdmin } from './AdminData';
 import AttendancePage from './pages/AttendancePage';
+import BoardAdminPage from './pages/BoardAdminPage';
 import DashboardPage from './pages/DashboardPage';
 import EnrollmentsPage from './pages/EnrollmentsPage';
 import LogsPage from './pages/LogsPage';
@@ -24,6 +25,7 @@ const MENU = [
   { to: '/admin/students', emoji: '🎒', label: '학생 관리' },
   { to: '/admin/teachers', emoji: '🧑‍🏫', label: '교사 관리' },
   { to: '/admin/timetable', emoji: '🗓️', label: '시간표 관리' },
+  { to: '/admin/board', emoji: '💬', label: '문의·공지' },
   { to: '/admin/attendance', emoji: '✅', label: '출결 조회' },
   { to: '/admin/logs', emoji: '🔐', label: '로그인 실패 기록' },
 ];
@@ -185,6 +187,7 @@ function Layout() {
               <Route path="students" element={<StudentsPage />} />
               <Route path="teachers" element={<TeachersPage />} />
               <Route path="timetable" element={<TimetableAdminPage />} />
+              <Route path="board" element={<BoardAdminPage />} />
               <Route path="attendance" element={<AttendancePage />} />
               <Route path="logs" element={<LogsPage />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />

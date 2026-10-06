@@ -1,6 +1,12 @@
+import { collection, query, where } from 'firebase/firestore';
 import { useState } from 'react';
 import { validateStudent, type StudentInput } from '@shared/admin';
 import { normalizeName, parseSid, phoneDigits } from '@shared/text';
+import type { SignupRequest } from '@shared/types';
+import { useQueryDocs } from '@/data/live';
+import { call } from '@/lib/call';
+import { db } from '@/lib/firebase';
+import { formatDateTime } from '@/lib/format';
 import { downloadXlsx, readXlsx, stamp } from '@/lib/xlsx';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
@@ -115,6 +121,7 @@ export default function StudentsPage() {
           </>
         }
       />
+      <SignupRequests />
       <p className="rounded-2xl bg-sky-50 px-4 py-3 text-[14px] text-sky-800">
         📞 연락처 일괄 등록: <b>명단 내려받기</b> → 엑셀의 연락처 칸 채우기 → <b>연락처 올리기</b> → 바뀔 내용 확인 → <b>저장 및 배포</b>
       </p>
@@ -280,5 +287,50 @@ export default function StudentsPage() {
         </Sheet>
       )}
     </div>
+  );
+}
+
+/** 가입 신청 승인·거절(누르는 즉시 반영) */
+function SignupRequests() {
+  const toast = useToast();
+  const list = useQueryDocs<SignupRequest>('signup-pending', () => query(collection(db, 'signupRequests'), where('status', '==', 'pending')));
+  const [busy, setBusy] = useState<string | null>(null);
+  if (!list?.length) return null;
+
+  async function review(sid: string, approve: boolean) {
+    setBusy(sid);
+    try {
+      await call('reviewSignup', { sid, approve });
+      toast(approve ? `${sid} 승인 — 이제 로그인할 수 있어요` : `${sid} 거절했어요`, approve ? 'success' : 'info');
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <Card className="ring-2 ring-brand-300">
+      <h2 className="text-[17px] font-extrabold">📝 가입 신청 {list.length}건</h2>
+      <p className="text-[13px] text-sub">명단에 없는 학생이 보낸 신청이에요. 승인하면 바로 학생 명단에 등록돼요.</p>
+      <ul className="mt-2 divide-y divide-line">
+        {[...list]
+          .sort((a, b) => a.createdAt - b.createdAt)
+          .map((r) => (
+            <li key={r.sid} className="flex flex-wrap items-center gap-2 py-2.5">
+              <span className="min-w-0 flex-1">
+                <b className="tabular-nums">{r.sid}</b> {r.name} <span className="text-sub tabular-nums">{fmtPhone(r.phone)}</span>
+                <span className="block text-[12px] text-sub">{formatDateTime(r.createdAt)} 신청</span>
+              </span>
+              <SmallButton tone="brand" disabled={busy === r.sid} onClick={() => review(r.sid, true)}>
+                승인
+              </SmallButton>
+              <SmallButton tone="danger" disabled={busy === r.sid} onClick={() => review(r.sid, false)}>
+                거절
+              </SmallButton>
+            </li>
+          ))}
+      </ul>
+    </Card>
   );
 }

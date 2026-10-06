@@ -1,6 +1,7 @@
 // 로그인: 등록 정보를 서버에서 확인하고, 역할·학급이 담긴 커스텀 토큰을 발급한다.
 // 학생 연락처(studentSecrets)와 교사 코드(teacherSecrets)는 보안 규칙상 브라우저에서 읽을 수 없다.
 
+import { randomBytes } from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { LOGIN_GUARD } from '../../shared/constants';
@@ -34,7 +35,17 @@ export const loginStudent = onCall(async (req) => {
   const stu = stuSnap.data();
   const registeredPhone = phoneDigits(secretSnap.data()?.phone);
 
-  if (!stu || normalizeName(stu.name) !== nameIn) {
+  if (!stu) {
+    // 가입 신청을 한 학생이면 상태를 알려 준다
+    const req = (await db.collection('signupRequests').doc(parsed.sid).get()).data();
+    if (req && normalizeName(req.name) === nameIn && phoneDigits(req.phone) === phoneIn) {
+      if (req.status === 'pending') fail('가입 신청이 아직 승인 대기 중이에요. 승인되면 로그인할 수 있어요.', 'failed-precondition', 'SIGNUP_PENDING');
+      if (req.status === 'rejected') fail('가입 신청이 승인되지 않았어요. 담임 선생님께 문의해 주세요.', 'failed-precondition', 'SIGNUP_REJECTED');
+    }
+    await onStudentFail(guard.key);
+    fail(MISMATCH, 'permission-denied');
+  }
+  if (normalizeName(stu.name) !== nameIn) {
     await onStudentFail(guard.key);
     fail(MISMATCH, 'permission-denied');
   }
@@ -48,7 +59,13 @@ export const loginStudent = onCall(async (req) => {
   }
 
   await resetGuard(guard.scope, guard.key);
-  const claims: Claims = { role: 'student', sid: parsed.sid, classNo: parsed.classNo };
+  // 문의 게시판 별칭: 처음 로그인할 때 한 번 만들어 둔다
+  let qa = typeof stu.qaAlias === 'string' ? stu.qaAlias : '';
+  if (!qa) {
+    qa = randomBytes(9).toString('base64url');
+    await db.collection('students').doc(parsed.sid).update({ qaAlias: qa });
+  }
+  const claims: Claims = { role: 'student', sid: parsed.sid, classNo: parsed.classNo, qa };
   const token = await auth.createCustomToken(studentUid(parsed.sid), claims);
   return { token, name: stu.name as string };
 });

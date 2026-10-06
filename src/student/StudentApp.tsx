@@ -1,7 +1,8 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { BottomNav, type NavItem } from '@/ui/BottomNav';
 import ApplyPage from './ApplyPage';
-import { StudentProfilePage, StudentQnaPage } from './MorePages';
+import BoardPage from '@/board/BoardPage';
+import { StudentProfilePage } from './MorePages';
 import { StudentDataProvider } from './StudentData';
 import TimetablePage from './TimetablePage';
 
@@ -28,7 +29,7 @@ export default function StudentApp() {
         <Route element={<Layout />}>
           <Route index element={<ApplyPage />} />
           <Route path="timetable" element={<TimetablePage />} />
-          <Route path="qna" element={<StudentQnaPage />} />
+          <Route path="qna" element={<BoardPage />} />
           <Route path="profile" element={<StudentProfilePage />} />
           <Route path="*" element={<Navigate to="/s" replace />} />
         </Route>

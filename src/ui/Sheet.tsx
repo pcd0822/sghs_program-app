@@ -8,10 +8,12 @@ interface Props {
   children: ReactNode;
   /** 맨 아래 고정 영역(버튼 등) */
   footer?: ReactNode;
+  /** 컴퓨터에서 넓게(편집 창) */
+  wide?: boolean;
 }
 
 /** 아래에서 올라오는 모달창 */
-export function Sheet({ open, onClose, title, children, footer }: Props) {
+export function Sheet({ open, onClose, title, children, footer, wide }: Props) {
   const panel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function Sheet({ open, onClose, title, children, footer }: Props) {
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="animate-sheet-up relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[28px] bg-white shadow-2xl outline-none"
+        className={`animate-sheet-up relative flex max-h-[92dvh] w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} flex-col rounded-t-[28px] bg-white shadow-2xl outline-none`}
       >
         <div className="flex shrink-0 items-center justify-between px-5 pt-3">
           <span className="mx-auto h-1.5 w-10 rounded-full bg-line" aria-hidden />

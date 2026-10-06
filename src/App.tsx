@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import Landing from '@/pages/Landing';
 import { StudentLogin, TeacherLogin } from '@/pages/Login';
-import { Signup } from '@/pages/Placeholder';
+import { Signup } from '@/pages/Signup';
 import StudentApp from '@/student/StudentApp';
 import TeacherApp from '@/teacher/TeacherApp';
 import { lazy, Suspense } from 'react';
