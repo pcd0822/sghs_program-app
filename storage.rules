@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Storage 규칙에서는 Firestore 를 조회하지 않는다(교차 서비스 권한 문제). 토큰 claims 와 경로만으로 판단한다.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.role == 'teacher' && request.auth.token.admin == true; }
+    function isImage(maxMb) {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
+        && request.resource.size < maxMb * 1024 * 1024;
+    }
+
+    // 강좌 썸네일: 누구나 보기(첫 화면), admin 만 올리기
+    match /thumbnails/{courseId}/{file} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage(3);
+      allow delete: if isAdmin();
+    }
+
+    // 프로필 사진: 로그인한 사용자 보기, 본인만 올리기 (uid 가 경로)
+    match /profiles/{uid}/{file} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid && isImage(2);
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // 공지 이미지: 로그인한 사용자 보기, admin 만 올리기
+    match /notices/{file} {
+      allow read: if signedIn();
+      allow write: if isAdmin() && isImage(5);
+      allow delete: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

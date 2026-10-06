@@ -1,0 +1,86 @@
+rules_version = '2';
+
+// 권한 정보는 로그인 토큰(커스텀 토큰 claims)에 들어 있다.
+//   학생: role='student', sid, classNo
+//   교사: role='teacher', tid, homeroom(null|0|1~9), admin
+// 신청 내역·인원 수·제출 상태·출결은 브라우저에서 쓸 수 없고 Cloud Functions(관리자 권한)만 쓴다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function tok() { return request.auth.token; }
+    function isStudent() { return signedIn() && tok().role == 'student'; }
+    function isTeacher() { return signedIn() && tok().role == 'teacher'; }
+    function isAdmin() { return isTeacher() && tok().admin == true; }
+    function isSelf(sid) { return isStudent() && tok().sid == sid; }
+    /** 담임(자기 반) · 전체 담당(0) · admin 은 그 학급을 볼 수 있다. */
+    function seesClass(classNo) {
+      return isAdmin() || (isTeacher() && (tok().homeroom == 0 || tok().homeroom == classNo));
+    }
+    function assignedTo(teacherIds) { return isTeacher() && tok().tid in teacherIds; }
+
+    // 강좌·설정: 개인정보가 없어 첫 화면(로그인 전)에서도 읽는다.
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if false;
+      match /shards/{shard} {
+        allow read: if isTeacher();
+        allow write: if false;
+      }
+    }
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /students/{sid} {
+      allow read: if isSelf(sid) || seesClass(resource.data.classNo);
+      allow write: if false;
+    }
+    // 연락처: 본인 · 담임/전체 담당/admin 만
+    match /studentSecrets/{sid} {
+      allow read: if isSelf(sid) || seesClass(resource.data.classNo);
+      allow write: if false;
+    }
+
+    match /teachers/{tid} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+    match /teacherSecrets/{tid} {
+      allow read, write: if false;
+    }
+
+    // 학생 한 명의 신청 목록 전체(문서 1개)
+    match /applications/{sid} {
+      allow read: if isSelf(sid) || seesClass(resource.data.classNo);
+      allow write: if false;
+    }
+
+    // 강좌별 수강생(출석부용 복사본)
+    match /enrollments/{id} {
+      allow read: if isSelf(resource.data.sid) || seesClass(resource.data.classNo) || assignedTo(resource.data.teacherIds);
+      allow write: if false;
+    }
+
+    // 출결: 날짜+학생 하나. 학급출결과 교과수업출결이 같은 문서를 쓴다.
+    match /attendance/{id} {
+      allow read: if seesClass(resource.data.classNo) || assignedTo(resource.data.viewerTeacherIds);
+      allow write: if false;
+      match /history/{h} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    match /adminLoginLogs/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // 그 밖(loginGuards, signupRequests 등)은 모두 차단. 문의 게시판은 5단계에서 추가.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
