@@ -1,9 +1,10 @@
+import { CalendarDays, Megaphone } from 'lucide-react';
 import { useState } from 'react';
 import { findOverlaps, overlapText } from '@shared/admin';
 import { OPERATING_DATES } from '@shared/constants';
 import type { DayNote, FixedEvent } from '@shared/types';
 import { formatDate, timeRange } from '@/lib/format';
-import { eventEmoji } from '@/timetable/WeekView';
+import { eventIcon } from '@/timetable/WeekView';
 import { Button } from '@/ui/Button';
 import { Sheet } from '@/ui/Sheet';
 import { useToast } from '@/ui/Toast';
@@ -44,7 +45,7 @@ export default function TimetableAdminPage() {
 
   return (
     <div className="space-y-5">
-      <PageHead emoji="🗓️" title="시간표 관리" desc='학교 고정 일정과 날짜별 안내 문구. 강좌 시간과 겹치는 고정 일정은 저장할 수 없어요.' />
+      <PageHead icon={CalendarDays} tone="amber" title="시간표 관리" desc='학교 고정 일정과 날짜별 안내 문구. 강좌 시간과 겹치는 고정 일정은 저장할 수 없어요.' />
       {a.dirtyKeys.timetable && (
         <p className="text-[14px] font-semibold text-orange-600">
           <DirtyDot /> 저장하지 않은 시간표 변경이 있어요
@@ -53,7 +54,7 @@ export default function TimetableAdminPage() {
 
       <Card>
         <div className="flex items-center">
-          <h2 className="flex-1 text-[17px] font-extrabold">📢 날짜별 안내 문구</h2>
+          <h2 className="flex flex-1 items-center gap-1.5 text-[17px] font-extrabold"><Megaphone size={18} className="text-brand-600" aria-hidden /> 날짜별 안내 문구</h2>
           <SmallButton tone="brand" onClick={() => setNote({ n: { id: rid(), dates: [], text: '' }, isNew: true })}>
             ＋ 안내 추가
           </SmallButton>
@@ -85,14 +86,14 @@ export default function TimetableAdminPage() {
                 <h2 className="flex-1 text-[17px] font-extrabold">{formatDate(d)}</h2>
                 <SmallButton onClick={() => setEv({ e: { id: rid(), date: d, start: '08:30', end: '09:30', title: '', place: '', description: '' }, isNew: true })}>＋ 고정 일정</SmallButton>
               </div>
-              {slots.length > 0 && <p className="mt-1 text-[12px] text-sub">🎟️ 강좌 운영 시간: {slots.join(', ')} ({courses.length}개)</p>}
+              {slots.length > 0 && <p className="mt-1 text-[12px] text-sub">강좌 운영 시간: {slots.join(', ')} ({courses.length}개)</p>}
               <ul className="mt-2 space-y-1.5">
                 {events.length === 0 && <li className="text-[14px] text-sub">고정 일정 없음</li>}
                 {events.map((e) => (
                   <li key={e.id} className="flex items-center gap-2 rounded-2xl bg-soft px-3 py-2">
                     <span className="w-24 shrink-0 text-[13px] font-semibold text-sub tabular-nums">{timeRange(e)}</span>
                     <span className="min-w-0 flex-1 truncate font-semibold">
-                      {eventEmoji(e.title)} {e.title} <span className="font-normal text-sub">{e.place}</span>
+                      <EventGlyph title={e.title} /> {e.title} <span className="font-normal text-sub">{e.place}</span>
                     </span>
                     <SmallButton onClick={() => setEv({ e, isNew: false })}>수정</SmallButton>
                     <SmallButton tone="danger" onClick={() => a.setTimetable({ ...tt, fixedEvents: tt.fixedEvents.filter((x) => x.id !== e.id) })}>
@@ -166,4 +167,9 @@ export default function TimetableAdminPage() {
       )}
     </div>
   );
+}
+
+function EventGlyph({ title }: { title: string }) {
+  const Icon = eventIcon(title);
+  return <Icon size={15} className="mr-0.5 inline -mt-0.5 text-brand-600" aria-hidden />;
 }

@@ -1,3 +1,4 @@
+import { ImageUp, TriangleAlert } from 'lucide-react';
 // 강좌 추가·수정 창. 바꾼 내용은 임시 변경으로 들어가고 "저장 및 배포"를 눌러야 반영된다.
 
 import { useEffect, useState } from 'react';
@@ -153,10 +154,10 @@ export function CourseEditor({ initial, isNew, onClose }: Props) {
       >
         <div className="space-y-4 pb-4">
           <div className="flex items-center gap-4">
-            <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="size-24 shrink-0 rounded-3xl" emojiClass="text-4xl" />
+            <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="size-24 shrink-0 rounded-3xl" />
             <div className="flex flex-col gap-2">
               <label className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full bg-soft px-4 text-[14px] font-semibold hover:bg-line">
-                {uploading ? '올리는 중…' : '🖼️ 썸네일 올리기'}
+                {uploading ? '올리는 중…' : <><ImageUp size={16} aria-hidden /> 썸네일 올리기</>}
                 <input type="file" accept="image/*" className="sr-only" disabled={uploading} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
               </label>
               {c.thumbnailUrl && <SmallButton onClick={() => set({ thumbnailUrl: null })}>기본 이미지로</SmallButton>}
@@ -219,8 +220,8 @@ export function CourseEditor({ initial, isNew, onClose }: Props) {
             </div>
           </div>
           <div className="grid gap-1 sm:grid-cols-2">
-            <Toggle label="💸 비용부담(자부담)" desc="학생 화면에 경고 표시 + 신청 시 한 번 더 확인" checked={c.selfPay} onChange={(v) => set({ selfPay: v })} />
-            <Toggle label="📌 인원고정" desc="정원 미달이면 현황판에서 강조" checked={c.fixedSize} onChange={(v) => set({ fixedSize: v })} />
+            <Toggle label="비용부담(자부담)" desc="학생 화면에 경고 표시 + 신청 시 한 번 더 확인" checked={c.selfPay} onChange={(v) => set({ selfPay: v })} />
+            <Toggle label="인원고정" desc="정원 미달이면 현황판에서 강조" checked={c.fixedSize} onChange={(v) => set({ fixedSize: v })} />
           </div>
           <TeacherPicker teachers={a.teachers} value={c.teacherIds} onChange={(ids) => set({ teacherIds: ids })} />
           <p className="text-[12px] text-sub">강좌 ID: {c.id}</p>
@@ -230,7 +231,7 @@ export function CourseEditor({ initial, isNew, onClose }: Props) {
       <Modal
         open={!!confirm}
         onClose={() => setConfirm(null)}
-        emoji="⚠️"
+        icon={TriangleAlert} tone="amber"
         title={confirm?.title ?? ''}
         actions={
           <>

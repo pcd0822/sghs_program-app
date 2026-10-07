@@ -1,3 +1,4 @@
+import { Camera } from 'lucide-react';
 // 프로필 사진 바꾸기: 기기에서 긴 변 512px 이하로 줄여 올린 뒤 서버에 알린다(교사 화면 복사본까지 갱신).
 
 import { useState } from 'react';
@@ -33,8 +34,8 @@ export function PhotoEditor({ url, name }: { url: string | null | undefined; nam
         {busy && <span className="absolute inset-0 grid place-items-center rounded-full bg-white/70 text-[13px] font-bold">올리는 중…</span>}
       </div>
       <div className="flex flex-col gap-2">
-        <label className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-soft px-4 text-[14px] font-semibold hover:bg-line">
-          📷 사진 바꾸기
+        <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-soft px-4 text-[14px] font-semibold hover:bg-line">
+          <Camera size={16} aria-hidden /> 사진 바꾸기
           <input
             type="file"
             accept="image/*"

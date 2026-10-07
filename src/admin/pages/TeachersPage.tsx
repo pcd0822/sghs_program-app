@@ -1,3 +1,4 @@
+import { Presentation, Trash2 } from 'lucide-react';
 import { collection, doc } from 'firebase/firestore';
 import { useState } from 'react';
 import { validateTeacher, type TeacherInput } from '@shared/admin';
@@ -35,7 +36,7 @@ export default function TeachersPage() {
   return (
     <div className="space-y-4">
       <PageHead
-        emoji="🧑‍🏫"
+        icon={Presentation} tone="sky"
         title="교사 관리"
         desc="담당학급·관리권한·코드를 바꾸면 그 선생님은 다시 로그인해야 해요(자동으로 로그아웃돼요)."
         actions={
@@ -129,7 +130,7 @@ export default function TeachersPage() {
       <Modal
         open={!!del}
         onClose={() => setDel(null)}
-        emoji="🗑️"
+        icon={Trash2} tone="rose"
         title={`${del?.name ?? ''} 선생님을 삭제할까요?`}
         actions={
           <>

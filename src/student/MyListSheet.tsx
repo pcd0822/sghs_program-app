@@ -1,3 +1,4 @@
+import { CircleCheck, Puzzle } from 'lucide-react';
 import { checkWindow } from '@shared/rules';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Button } from '@/ui/Button';
@@ -78,9 +79,9 @@ export function MyListSheet({ open, onClose }: { open: boolean; onClose(): void 
       footer={
         <div>
           {submitted ? (
-            <p className="mb-2 text-center text-[14px] font-semibold text-emerald-600">✅ 제출 완료 · {app?.submittedAt ? formatDateTime(app.submittedAt) : ''}</p>
+            <p className="mb-2 text-center text-[14px] font-semibold text-emerald-600"><CircleCheck size={15} className="mr-1 inline -mt-0.5" aria-hidden />제출 완료 · {app?.submittedAt ? formatDateTime(app.submittedAt) : ''}</p>
           ) : missing.length > 0 ? (
-            <p className="mb-2 text-center text-[14px] font-semibold text-orange-600">🧩 아직 {missing.length}개가 빠졌어요. 모두 채워야 제출할 수 있어요.</p>
+            <p className="mb-2 text-center text-[14px] font-semibold text-orange-600"><Puzzle size={15} className="mr-1 inline -mt-0.5" aria-hidden />아직 {missing.length}개가 빠졌어요. 모두 채워야 제출할 수 있어요.</p>
           ) : (
             <p className="mb-2 text-center text-[14px] font-semibold text-brand-700">모두 채웠어요! 제출 버튼을 눌러 마무리해 주세요.</p>
           )}

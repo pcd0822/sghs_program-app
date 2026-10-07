@@ -1,3 +1,4 @@
+import { CircleCheck, TriangleAlert } from 'lucide-react';
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 
 type Kind = 'success' | 'error' | 'info';
@@ -25,12 +26,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={i.id}
             role={i.kind === 'error' ? 'alert' : 'status'}
-            className={`animate-fade-in max-w-sm rounded-full px-4 py-2.5 text-[15px] font-medium shadow-lg ${
+            className={`animate-fade-in flex max-w-sm items-center gap-2 rounded-full px-4 py-2.5 text-[15px] font-medium shadow-lg ${
               i.kind === 'error' ? 'bg-rose-600 text-white' : i.kind === 'success' ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-line'
             }`}
           >
-            {i.kind === 'success' ? '✅ ' : i.kind === 'error' ? '⚠️ ' : ''}
-            {i.text}
+            {i.kind === 'success' && <CircleCheck size={18} className="shrink-0 text-emerald-400" aria-hidden />}
+            {i.kind === 'error' && <TriangleAlert size={18} className="shrink-0" aria-hidden />}
+            <span>{i.text}</span>
           </div>
         ))}
       </div>

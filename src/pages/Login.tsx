@@ -1,10 +1,12 @@
+import { Backpack, KeyRound, type LucideIcon } from 'lucide-react';
 import { useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/ui/Button';
+import { IconTile, type GlyphTone } from '@/ui/Glyph';
 import { useToast } from '@/ui/Toast';
 
-function Shell({ emoji, title, desc, children }: { emoji: string; title: string; desc: string; children: ReactNode }) {
+function Shell({ icon, tone, title, desc, children }: { icon: LucideIcon; tone: GlyphTone; title: string; desc: string; children: ReactNode }) {
   const nav = useNavigate();
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pt-[max(env(safe-area-inset-top),12px)] pb-[max(env(safe-area-inset-bottom),24px)]">
@@ -16,10 +18,8 @@ function Shell({ emoji, title, desc, children }: { emoji: string; title: string;
       >
         ‹
       </button>
-      <div className="mt-6 text-4xl" aria-hidden>
-        {emoji}
-      </div>
-      <h1 className="mt-3 text-[28px] font-extrabold tracking-tight">{title}</h1>
+      <IconTile icon={icon} tone={tone} size={56} className="mt-6" />
+      <h1 className="mt-4text-[28px] font-extrabold tracking-tight">{title}</h1>
       <p className="mt-1 text-[15px] text-sub">{desc}</p>
       {children}
     </main>
@@ -62,7 +62,7 @@ export function StudentLogin() {
   }
 
   return (
-    <Shell emoji="🎒" title="학생 로그인" desc="등록된 학번 · 이름 · 연락처를 입력해 주세요.">
+    <Shell icon={Backpack} tone="coral" title="학생 로그인" desc="등록된 학번 · 이름 · 연락처를 입력해 주세요.">
       <form onSubmit={submit} className="mt-8 flex flex-1 flex-col gap-4">
         <Field
           label="학번"
@@ -120,7 +120,7 @@ export function TeacherLogin() {
   }
 
   return (
-    <Shell emoji="🧑‍🏫" title="관리자(교사) 로그인" desc="안내받은 4자리 코드를 입력해 주세요.">
+    <Shell icon={KeyRound} tone="violet" title="관리자(교사) 로그인" desc="안내받은 4자리 코드를 입력해 주세요.">
       <form onSubmit={submit} className="mt-10 flex flex-1 flex-col">
         <label className="relative block">
           <span className="sr-only">4자리 코드</span>

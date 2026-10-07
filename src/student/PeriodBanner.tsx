@@ -1,3 +1,4 @@
+import { AlarmClock, CalendarDays, Lock } from 'lucide-react';
 import { formatDateTime } from '@/lib/format';
 import { useStudent } from './StudentData';
 
@@ -20,11 +21,11 @@ export function PeriodBanner() {
   const box = 'mt-3 flex items-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-semibold';
   switch (periodNow) {
     case 'unset':
-      return <div className={`${box} bg-soft text-sub`}>📅 수강신청 일정이 곧 안내될 예정이에요.</div>;
+      return <div className={`${box} bg-soft text-sub`}><CalendarDays size={17} className="shrink-0" aria-hidden /> 수강신청 일정이 곧 안내될 예정이에요.</div>;
     case 'before':
       return (
         <div className={`${box} bg-sky-50 text-sky-800`}>
-          ⏰ <span className="flex-1">{formatDateTime(period!.openAt!)}에 열려요</span>
+          <AlarmClock size={17} className="shrink-0" aria-hidden /> <span className="flex-1">{formatDateTime(period!.openAt!)}에 열려요</span>
           <span className="tabular-nums">{countdown(period!.openAt! - now)}</span>
         </div>
       );
@@ -40,6 +41,6 @@ export function PeriodBanner() {
         </div>
       );
     case 'closed':
-      return <div className={`${box} bg-zinc-100 text-zinc-600`}>🔒 수강신청이 마감되었어요. 바꿔야 하면 담임 선생님께 말씀드려 주세요.</div>;
+      return <div className={`${box} bg-zinc-100 text-zinc-600`}><Lock size={17} className="shrink-0" aria-hidden /> <span>수강신청이 마감되었어요. 바꿔야 하면 담임 선생님께 말씀드려 주세요.</span></div>;
   }
 }

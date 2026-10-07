@@ -1,8 +1,9 @@
+import type { LucideIcon } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 export interface NavItem {
   to: string;
-  emoji: string;
+  icon: LucideIcon;
   label: string;
   end?: boolean;
 }
@@ -22,14 +23,12 @@ export function BottomNav({ items }: { items: NavItem[] }) {
               end={it.end}
               className={({ isActive }) =>
                 `flex min-h-13 min-w-[58px] flex-col items-center justify-center rounded-full px-2.5 text-[11px] font-semibold transition ${
-                  isActive ? 'bg-soft text-ink' : 'text-sub hover:text-ink'
+                  isActive ? 'bg-brand-50 text-brand-700' : 'text-sub hover:text-ink'
                 }`
               }
             >
-              <span className="text-[20px] leading-none" aria-hidden>
-                {it.emoji}
-              </span>
-              <span className="mt-0.5">{it.label}</span>
+              <it.icon size={21} strokeWidth={2.1} aria-hidden />
+              <span className="mt-1">{it.label}</span>
             </NavLink>
           </li>
         ))}

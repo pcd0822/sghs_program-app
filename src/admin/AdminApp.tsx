@@ -1,7 +1,9 @@
+import { Backpack, CalendarClock, CalendarDays, ClipboardCheck, ClipboardList, LayoutDashboard, Menu, MessageCircle, Presentation, Save, ShieldAlert, Ticket, TriangleAlert, Undo2, Wrench } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import { useSession } from '@/auth/AuthProvider';
 import { Button } from '@/ui/Button';
+import { IconTile } from '@/ui/Glyph';
 import { Modal } from '@/ui/Modal';
 import { Sheet } from '@/ui/Sheet';
 import { useToast } from '@/ui/Toast';
@@ -18,16 +20,16 @@ import TeachersPage from './pages/TeachersPage';
 import TimetableAdminPage from './pages/TimetableAdminPage';
 
 const MENU = [
-  { to: '/admin', emoji: '📊', label: '현황판', end: true },
-  { to: '/admin/period', emoji: '⏰', label: '신청 일정' },
-  { to: '/admin/programs', emoji: '🎟️', label: '프로그램·담당교사' },
-  { to: '/admin/enrollments', emoji: '📋', label: '수강신청 내역' },
-  { to: '/admin/students', emoji: '🎒', label: '학생 관리' },
-  { to: '/admin/teachers', emoji: '🧑‍🏫', label: '교사 관리' },
-  { to: '/admin/timetable', emoji: '🗓️', label: '시간표 관리' },
-  { to: '/admin/board', emoji: '💬', label: '문의·공지' },
-  { to: '/admin/attendance', emoji: '✅', label: '출결 조회' },
-  { to: '/admin/logs', emoji: '🔐', label: '로그인 실패 기록' },
+  { to: '/admin', icon: LayoutDashboard, label: '현황판', end: true },
+  { to: '/admin/period', icon: CalendarClock, label: '신청 일정' },
+  { to: '/admin/programs', icon: Ticket, label: '프로그램·담당교사' },
+  { to: '/admin/enrollments', icon: ClipboardList, label: '수강신청 내역' },
+  { to: '/admin/students', icon: Backpack, label: '학생 관리' },
+  { to: '/admin/teachers', icon: Presentation, label: '교사 관리' },
+  { to: '/admin/timetable', icon: CalendarDays, label: '시간표 관리' },
+  { to: '/admin/board', icon: MessageCircle, label: '문의·공지' },
+  { to: '/admin/attendance', icon: ClipboardCheck, label: '출결 조회' },
+  { to: '/admin/logs', icon: ShieldAlert, label: '로그인 실패 기록' },
 ];
 
 function MenuList({ onPick }: { onPick?(): void }) {
@@ -51,7 +53,7 @@ function MenuList({ onPick }: { onPick?(): void }) {
               `flex min-h-11 items-center gap-2.5 rounded-2xl px-3 text-[15px] font-semibold transition ${isActive ? 'bg-ink text-white' : 'text-[#45454f] hover:bg-soft'}`
             }
           >
-            <span aria-hidden>{m.emoji}</span>
+            <m.icon size={18} strokeWidth={2.1} aria-hidden />
             <span className="flex-1">{m.label}</span>
             {dirtyOf[m.to] && <span className="size-2 rounded-full bg-orange-500" aria-label="저장하지 않은 변경" />}
           </NavLink>
@@ -103,16 +105,16 @@ function SaveBar() {
                 setBusy(false);
               }
             }}
-            className="min-h-10 rounded-full bg-white px-4 text-[14px] font-bold text-ink disabled:opacity-60"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-white px-4 text-[14px] font-bold text-ink disabled:opacity-60"
           >
-            {busy ? '저장 중…' : '💾 저장 및 배포'}
+            {busy ? '저장 중…' : <><Save size={16} aria-hidden /> 저장 및 배포</>}
           </button>
         </div>
       </div>
       <Modal
         open={confirmDiscard}
         onClose={() => setConfirmDiscard(false)}
-        emoji="↩️"
+        icon={Undo2} tone="slate"
         title="변경을 모두 되돌릴까요?"
         actions={
           <>
@@ -147,8 +149,8 @@ function Layout() {
     <div className="min-h-dvh bg-[#f7f7f9]">
       {/* 컴퓨터: 왼쪽 메뉴 */}
       <aside className="fixed inset-y-0 left-0 hidden w-[260px] flex-col border-r border-line bg-white p-4 lg:flex">
-        <p className="px-3 pt-2 pb-4 text-[18px] font-extrabold">
-          🛠️ <span className="text-gradient">관리자 대시보드</span>
+        <p className="flex items-center gap-2.5 px-3 pt-2 pb-4 text-[18px] font-extrabold">
+          <IconTile icon={Wrench} size={30} /> <span className="text-gradient">관리자 대시보드</span>
         </p>
         <MenuList />
         <button type="button" onClick={leave} className="mt-auto min-h-11 rounded-2xl px-3 text-left text-[14px] font-semibold text-sub hover:bg-soft">
@@ -161,9 +163,9 @@ function Layout() {
         <button type="button" onClick={leave} className="grid size-11 place-items-center rounded-full text-xl hover:bg-soft" aria-label="교사 화면으로">
           ‹
         </button>
-        <p className="flex-1 text-[16px] font-extrabold">🛠️ 관리자 대시보드</p>
-        <button type="button" onClick={() => setMenuOpen(true)} className="min-h-11 rounded-full bg-soft px-4 text-[14px] font-bold">
-          ☰ 메뉴
+        <p className="flex flex-1 items-center gap-2 text-[16px] font-extrabold"><IconTile icon={Wrench} size={26} /> 관리자 대시보드</p>
+        <button type="button" onClick={() => setMenuOpen(true)} className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-soft px-4 text-[14px] font-bold">
+          <Menu size={17} aria-hidden /> 메뉴
         </button>
       </header>
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="대시보드 메뉴">
@@ -200,7 +202,7 @@ function Layout() {
       <Modal
         open={leaving}
         onClose={() => setLeaving(false)}
-        emoji="⚠️"
+        icon={TriangleAlert} tone="amber"
         title="저장하지 않은 변경이 있어요"
         actions={
           <>

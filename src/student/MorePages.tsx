@@ -1,3 +1,5 @@
+import { Smartphone, UserRound } from 'lucide-react';
+import { Eyebrow } from '@/ui/Glyph';
 // 학생 프로필: 사진·연락처 수정(교사 화면에 바로 반영)
 
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -50,7 +52,7 @@ export function StudentProfilePage() {
 
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
-      <p className="pt-2 text-[14px] font-semibold text-sub">👤 프로필</p>
+      <Eyebrow icon={UserRound} tone="sky">프로필</Eyebrow>
       <h1 className="text-[24px] font-extrabold">{me?.name ?? ''}</h1>
       <p className="text-sub">
         {sid} · {me ? `${me.classNo}반 ${me.number}번` : ''}
@@ -94,7 +96,7 @@ export function StudentProfilePage() {
       <Modal
         open={confirm}
         onClose={() => setConfirm(false)}
-        emoji="📱"
+        icon={Smartphone} tone="sky"
         title="연락처를 바꿀까요?"
         actions={
           <>

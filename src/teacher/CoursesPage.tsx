@@ -1,3 +1,5 @@
+import { BookOpenCheck, Ticket } from 'lucide-react';
+import { Eyebrow } from '@/ui/Glyph';
 import type { Course } from '@shared/types';
 import { CourseRow, CourseRowSkeleton, TopLists } from '@/courses/CourseParts';
 import { formatDate, timeRange } from '@/lib/format';
@@ -12,11 +14,11 @@ export default function CoursesPage() {
 
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
-      <p className="pt-2 text-[14px] font-semibold text-sub">🎟️ 강좌</p>
+      <Eyebrow icon={Ticket} tone="violet">강좌</Eyebrow>
       <h1 className="text-[24px] font-extrabold tracking-tight">{me?.name ? `${me.name} 선생님, 안녕하세요` : '안녕하세요'}</h1>
 
       <section className="mt-3 rounded-[28px] bg-gradient-to-br from-brand-50 via-white to-orange-50 p-4 ring-1 ring-line">
-        <p className="text-[15px] font-bold">📚 내가 맡은 강좌 {myCourses.length}개</p>
+        <p className="flex items-center gap-1.5 text-[15px] font-bold"><BookOpenCheck size={18} className="text-brand-600" aria-hidden /> 내가 맡은 강좌 {myCourses.length}개</p>
         {myCourses.length === 0 ? (
           <p className="mt-1 text-[14px] text-sub">아직 배정된 강좌가 없어요. 배정은 관리자가 대시보드에서 해요.</p>
         ) : (

@@ -1,3 +1,4 @@
+import { Presentation, Ticket, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { CourseInput } from '@shared/admin';
 import type { Course } from '@shared/types';
@@ -7,7 +8,7 @@ import { Pill } from '@/ui/Pill';
 import { enrolled, toCourseInput, useAdmin } from '../AdminData';
 import { CourseEditor, newCourseInput } from '../CourseEditor';
 import { TeacherPicker } from '../TeacherPicker';
-import { Card, DirtyDot, PageHead, SmallButton, TableWrap } from '../ui';
+import { Card, DirtyDot, PageHead, SmallButton, TableWrap, SearchBox } from '../ui';
 
 export default function ProgramsPage() {
   const a = useAdmin();
@@ -27,13 +28,13 @@ export default function ProgramsPage() {
   return (
     <div className="space-y-4">
       <PageHead
-        emoji="🎟️"
+        icon={Ticket}
         title="프로그램·담당교사"
         desc={`강좌 ${a.courses.length}개 · 고친 내용은 "저장 및 배포"를 눌러야 반영돼요.`}
         actions={
           <>
             <SmallButton onClick={() => setAssignMode((v) => !v)} tone={assignMode ? 'dark' : 'default'}>
-              🧑‍🏫 담당교사 배정 {assignMode ? '끝내기' : '모드'}
+              <Presentation size={16} aria-hidden /> 담당교사 배정 {assignMode ? '끝내기' : '모드'}
             </SmallButton>
             <SmallButton tone="brand" onClick={add}>
               ＋ 강좌 추가
@@ -43,13 +44,7 @@ export default function ProgramsPage() {
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          placeholder="🔍 강좌명·코드·장소"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="h-10 w-full rounded-full border border-line bg-white px-4 text-[14px] sm:w-64"
-        />
+        <SearchBox placeholder="강좌명·코드·장소" value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
           {['all', ...dates].map((d) => (
             <button
@@ -63,7 +58,7 @@ export default function ProgramsPage() {
           ))}
         </div>
       </div>
-      {removed.length > 0 && <p className="rounded-2xl bg-rose-50 px-4 py-2 text-[14px] font-semibold text-rose-600">🗑️ 삭제 예정 강좌 {removed.length}개 (저장 및 배포 시 삭제)</p>}
+      {removed.length > 0 && <p className="rounded-2xl bg-rose-50 px-4 py-2 text-[14px] font-semibold text-rose-600"><Trash2 size={15} className="mr-1 inline" aria-hidden />삭제 예정 강좌 {removed.length}개 (저장 및 배포 시 삭제)</p>}
 
       {assignMode ? (
         <Card>
@@ -147,7 +142,7 @@ export default function ProgramsPage() {
               return (
                 <li key={c.id}>
                   <button type="button" onClick={() => open(c)} className="flex w-full gap-3 rounded-3xl bg-white p-3 text-left ring-1 ring-line active:scale-[0.99]">
-                    <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="size-16 shrink-0 rounded-2xl" emojiClass="text-2xl" />
+                    <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="size-16 shrink-0 rounded-2xl" />
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1 text-[12px] text-sub">
                         {formatDate(c.date)} · {c.code} {c.selfPay && <Pill tone="orange">자부담</Pill>} {c.fixedSize && <Pill tone="gray">인원고정</Pill>}

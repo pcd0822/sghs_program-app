@@ -1,15 +1,18 @@
 // 대시보드 공용 부품: 제목, 입력칸, 카드, 표
 
+import { ChevronDown, Search, type LucideIcon } from 'lucide-react';
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { EmptyArt, IconTile, type GlyphTone } from '@/ui/Glyph';
 
-export function PageHead({ emoji, title, desc, actions }: { emoji: string; title: string; desc?: string; actions?: ReactNode }) {
+export function PageHead({ icon, tone = 'violet', title, desc, actions }: { icon: LucideIcon; tone?: GlyphTone; title: string; desc?: string; actions?: ReactNode }) {
   return (
     <header className="flex flex-wrap items-end gap-3">
-      <div className="min-w-0 flex-1">
-        <h1 className="text-[24px] font-extrabold tracking-tight lg:text-[28px]">
-          <span aria-hidden>{emoji}</span> {title}
-        </h1>
-        {desc && <p className="mt-1 text-[14px] text-sub">{desc}</p>}
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <IconTile icon={icon} tone={tone} size={44} className="mt-0.5" />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[24px] leading-tight font-extrabold tracking-tight lg:text-[28px]">{title}</h1>
+          {desc && <p className="mt-1 text-[14px] text-sub">{desc}</p>}
+        </div>
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </header>
@@ -117,12 +120,37 @@ export function TableWrap({ children }: { children: ReactNode }) {
   );
 }
 
-export function Empty({ emoji, text }: { emoji: string; text: string }) {
+export function Empty({ icon, tone, text }: { icon: LucideIcon; tone?: GlyphTone; text: string }) {
   return (
     <div className="py-12 text-center text-sub">
-      <div className="text-4xl">{emoji}</div>
-      <p className="mt-2">{text}</p>
+      <EmptyArt icon={icon} tone={tone} />
+      <p className="mt-3">{text}</p>
     </div>
+  );
+}
+
+/** 돋보기 아이콘이 든 검색 칸 */
+export function SearchBox({ className = '', ...rest }: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <span className={`relative inline-flex w-full sm:w-64 ${className}`}>
+      <Search className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sub" size={17} aria-hidden />
+      <input type="search" {...rest} className="h-10 w-full rounded-full border border-line bg-white pr-4 pl-10 text-[14px] outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+    </span>
+  );
+}
+
+/** 알약 모양 고르기 칸. 글자 길이와 상관없이 오른쪽 화살표 자리를 따로 비워 둔다. */
+export function PillSelect({ className = '', children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <span className={`relative inline-flex ${className}`}>
+      <select
+        {...rest}
+        className="h-10 w-full min-w-0 cursor-pointer appearance-none truncate rounded-full border border-line bg-white pr-10 pl-4 text-[14px] font-semibold outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+      >
+        {children}
+      </select>
+      <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-sub" size={18} aria-hidden />
+    </span>
   );
 }
 

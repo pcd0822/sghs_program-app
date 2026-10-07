@@ -1,3 +1,4 @@
+import { ImagePlus, Link2 } from 'lucide-react';
 // 공지 작성 도구: 굵게·기울임·제목·목록·링크·글꼴·글자 색·이미지 올리기 버튼 + 미리보기.
 // 마크다운으로 저장하고, 글꼴·색은 <span style> 로 넣는다(보여줄 때 DOMPurify 로 거름).
 
@@ -83,7 +84,7 @@ export function NoticeEditor({ value, onChange }: Props) {
           • 목록
         </button>
         <button type="button" className={btn} onClick={() => wrap('[', '](https://)', '링크 글자')} title="링크">
-          🔗 링크
+          <Link2 size={15} className="mr-1 inline -mt-0.5" aria-hidden />링크
         </button>
         <select
           aria-label="글꼴"
@@ -111,7 +112,7 @@ export function NoticeEditor({ value, onChange }: Props) {
           ))}
         </span>
         <label className={`${btn} inline-flex cursor-pointer items-center`}>
-          {uploading ? '올리는 중…' : '🖼️ 이미지'}
+          {uploading ? '올리는 중…' : <><ImagePlus size={15} className="mr-1" aria-hidden />이미지</>}
           <input type="file" accept="image/*" className="sr-only" disabled={uploading} onChange={(e) => e.target.files?.[0] && addImage(e.target.files[0])} />
         </label>
         <span className="ml-auto flex rounded-xl bg-white p-0.5">

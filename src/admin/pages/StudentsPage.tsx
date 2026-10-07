@@ -1,3 +1,4 @@
+import { Backpack, Download, FilePenLine, Phone, Trash2, Upload } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
 import { useState } from 'react';
 import { validateStudent, type StudentInput } from '@shared/admin';
@@ -13,7 +14,7 @@ import { Modal } from '@/ui/Modal';
 import { Sheet } from '@/ui/Sheet';
 import { useToast } from '@/ui/Toast';
 import { useAdmin, type StudentRow } from '../AdminData';
-import { Card, DirtyDot, Field, PageHead, SmallButton, TableWrap } from '../ui';
+import { Card, DirtyDot, Field, PageHead, SmallButton, TableWrap, SearchBox, PillSelect } from '../ui';
 
 const fmtPhone = (p: string) => p.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
 
@@ -96,14 +97,14 @@ export default function StudentsPage() {
   return (
     <div className="space-y-4">
       <PageHead
-        emoji="🎒"
+        icon={Backpack} tone="coral"
         title="학생 관리"
         desc={`${a.students.length}명 · 연락처 없음 ${noPhone}명 (연락처가 없으면 로그인할 수 없어요)`}
         actions={
           <>
-            <SmallButton onClick={downloadRoster}>⬇️ 명단 내려받기</SmallButton>
-            <label className="inline-flex min-h-10 cursor-pointer items-center rounded-full bg-soft px-4 text-[14px] font-semibold hover:bg-line">
-              ⬆️ 연락처 올리기
+            <SmallButton onClick={downloadRoster}><Download size={16} aria-hidden /> 명단 내려받기</SmallButton>
+            <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full bg-soft px-4 text-[14px] font-semibold hover:bg-line">
+              <Upload size={16} aria-hidden /> 연락처 올리기
               <input
                 type="file"
                 accept=".xlsx,.xls,.csv"
@@ -122,26 +123,20 @@ export default function StudentsPage() {
         }
       />
       <SignupRequests />
-      <p className="rounded-2xl bg-sky-50 px-4 py-3 text-[14px] text-sky-800">
-        📞 연락처 일괄 등록: <b>명단 내려받기</b> → 엑셀의 연락처 칸 채우기 → <b>연락처 올리기</b> → 바뀔 내용 확인 → <b>저장 및 배포</b>
+      <p className="flex items-start gap-2 rounded-2xl bg-sky-50 px-4 py-3 text-[14px] text-sky-800">
+        <Phone size={16} className="mt-0.5 shrink-0" aria-hidden /> <span>연락처 일괄 등록: <b>명단 내려받기</b> → 엑셀의 연락처 칸 채우기 → <b>연락처 올리기</b> → 바뀔 내용 확인 → <b>저장 및 배포</b></span>
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          placeholder="🔍 학번 또는 이름"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="h-10 w-full rounded-full border border-line bg-white px-4 text-[14px] sm:w-64"
-        />
-        <select value={cls} onChange={(e) => setCls(e.target.value === 'all' ? 'all' : Number(e.target.value))} className="h-10 rounded-full border border-line bg-white px-3 text-[14px]">
+        <SearchBox placeholder="학번 또는 이름" value={q} onChange={(e) => setQ(e.target.value)} />
+        <PillSelect value={cls} onChange={(e) => setCls(e.target.value === 'all' ? 'all' : Number(e.target.value))} className="w-36" aria-label="학급 선택">
           <option value="all">전체 반</option>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
             <option key={n} value={n}>
               {n}반
             </option>
           ))}
-        </select>
+        </PillSelect>
       </div>
 
       <Card>
@@ -204,7 +199,7 @@ export default function StudentsPage() {
       <Modal
         open={!!del}
         onClose={() => setDel(null)}
-        emoji="🗑️"
+        icon={Trash2} tone="rose"
         title={`${del?.name ?? ''} 학생을 삭제할까요?`}
         actions={
           <>
@@ -311,7 +306,7 @@ function SignupRequests() {
 
   return (
     <Card className="ring-2 ring-brand-300">
-      <h2 className="text-[17px] font-extrabold">📝 가입 신청 {list.length}건</h2>
+      <h2 className="flex items-center gap-1.5 text-[17px] font-extrabold"><FilePenLine size={18} className="text-brand-600" aria-hidden /> 가입 신청 {list.length}건</h2>
       <p className="text-[13px] text-sub">명단에 없는 학생이 보낸 신청이에요. 승인하면 바로 학생 명단에 등록돼요.</p>
       <ul className="mt-2 divide-y divide-line">
         {[...list]

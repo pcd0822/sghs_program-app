@@ -1,3 +1,4 @@
+import { Presentation, Users } from 'lucide-react';
 // 교사 화면 전체가 함께 쓰는 자료: 강좌·교사 목록·시간표 설정과 강좌 상세(신청 버튼 없음).
 
 import { collection, getDocs } from 'firebase/firestore';
@@ -82,10 +83,10 @@ function TeacherNotice({ c }: { c: Course }) {
   return (
     <div className="mt-4 space-y-2">
       {c.capacity === null && unlimitedCount !== null && (
-        <p className="rounded-2xl bg-soft px-4 py-3 text-[15px] font-semibold">👥 현재 신청 {unlimitedCount}명</p>
+        <p className="flex items-center gap-2 rounded-2xl bg-soft px-4 py-3 text-[15px] font-semibold"><Users size={18} className="shrink-0 text-brand-600" aria-hidden /> 현재 신청 {unlimitedCount}명</p>
       )}
       <p className={`rounded-2xl px-4 py-3 text-[15px] font-semibold ${c.teacherIds?.includes(tid) ? 'bg-brand-50 text-brand-700' : 'bg-soft'}`}>
-        🧑‍🏫 담당 교사: {names.length ? names.join(', ') : '아직 배정되지 않았어요'}
+        <Presentation size={18} className="mr-1.5 inline -mt-0.5" aria-hidden />담당 교사: {names.length ? names.join(', ') : '아직 배정되지 않았어요'}
         {c.teacherIds?.includes(tid) && ' (나)'}
       </p>
     </div>

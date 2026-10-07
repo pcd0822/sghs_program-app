@@ -1,3 +1,4 @@
+import { BookOpenCheck, CalendarDays, School, Ticket, UserRound } from 'lucide-react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { BottomNav, type NavItem } from '@/ui/BottomNav';
 import ClassPage from './ClassPage';
@@ -11,11 +12,11 @@ function Layout() {
   const { homeroom } = useTeacher();
   // 권한이 없는 메뉴는 숨긴다: 담임이 아니면 학급출결 없음
   const nav: NavItem[] = [
-    { to: '/t', emoji: '🎟️', label: '강좌', end: true },
-    { to: '/t/timetable', emoji: '🗓️', label: '시간표' },
-    ...(homeroom !== null ? [{ to: '/t/class', emoji: '🏫', label: '학급출결' }] : []),
-    { to: '/t/subject', emoji: '📚', label: '교과출결' },
-    { to: '/t/profile', emoji: '👤', label: '프로필' },
+    { to: '/t', icon: Ticket, label: '강좌', end: true },
+    { to: '/t/timetable', icon: CalendarDays, label: '시간표' },
+    ...(homeroom !== null ? [{ to: '/t/class', icon: School, label: '학급출결' }] : []),
+    { to: '/t/subject', icon: BookOpenCheck, label: '교과출결' },
+    { to: '/t/profile', icon: UserRound, label: '프로필' },
   ];
   return (
     <div className="mx-auto min-h-dvh max-w-lg bg-white pb-28">

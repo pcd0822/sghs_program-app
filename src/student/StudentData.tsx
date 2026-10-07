@@ -1,3 +1,5 @@
+import { Ban, CalendarX2, CircleCheck, PartyPopper, Puzzle, Undo2, UserX, Wallet, type LucideIcon } from 'lucide-react';
+import type { GlyphTone } from '@/ui/Glyph';
 // 학생 화면 전체가 함께 쓰는 자료와 동작(신청·취소·제출).
 // 실시간 수신은 여기 한 곳에서만 연다: 강좌 목록, 신청 기간, 시간표 설정, 내 신청 문서.
 
@@ -49,7 +51,7 @@ const Ctx = createContext<StudentValue | null>(null);
 
 type Dialog =
   | { kind: 'dup' }
-  | { kind: 'info'; title: string; text: string; emoji: string }
+  | { kind: 'info'; title: string; text: string; icon: LucideIcon; tone: GlyphTone }
   | { kind: 'selfPay'; c: Course }
   | { kind: 'cancel'; c: Course }
   | { kind: 'missing'; lines: string[] }
@@ -87,7 +89,7 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         const err = e as CallError;
         if (err.reason === 'DUP_CODE') setDialog({ kind: 'dup' });
-        else if (err.reason === 'FULL') setDialog({ kind: 'info', emoji: '😢', title: '정원이 다 찼어요', text: '방금 다른 친구가 마지막 자리를 신청했어요. 다른 강좌를 골라 주세요.' });
+        else if (err.reason === 'FULL') setDialog({ kind: 'info', icon: UserX, tone: 'slate', title: '정원이 다 찼어요', text: '방금 다른 친구가 마지막 자리를 신청했어요. 다른 강좌를 골라 주세요.' });
         else toast(err.message || BUSY_MSG, 'error');
       } finally {
         setBusy(null);
@@ -112,9 +114,9 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
       if (win) return toast(win.message, 'error');
       const rule = checkPersonalRules(c, items);
       if (rule?.code === 'DUP_CODE') return setDialog({ kind: 'dup' });
-      if (rule?.code === 'SAME_DATE') return setDialog({ kind: 'info', emoji: '📅', title: '같은 날 선택 강좌는 1개만', text: rule.message });
+      if (rule?.code === 'SAME_DATE') return setDialog({ kind: 'info', icon: CalendarX2, tone: 'amber', title: '같은 날 선택 강좌는 1개만', text: rule.message });
       if (rule) return toast(rule.message, 'info');
-      if (isFull(c)) return setDialog({ kind: 'info', emoji: '😢', title: '정원이 다 찼어요', text: '다른 강좌를 골라 주세요.' });
+      if (isFull(c)) return setDialog({ kind: 'info', icon: UserX, tone: 'slate', title: '정원이 다 찼어요', text: '다른 강좌를 골라 주세요.' });
       if (c.selfPay) return setDialog({ kind: 'selfPay', c });
       void doApply(c, false);
     },
@@ -173,13 +175,13 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
       <MyListSheet open={listOpen} onClose={() => setListOpen(false)} />
       <CourseDetailSheet c={sel} onClose={() => setSelected(null)} footer={sel && <DetailAction c={sel} />} notice={sel && <DetailNotice c={sel} />} />
 
-      <Modal open={dialog?.kind === 'dup'} onClose={close} emoji="🙅" title={DUP_CODE_MESSAGE}>
+      <Modal open={dialog?.kind === 'dup'} onClose={close} icon={Ban} tone="rose" title={DUP_CODE_MESSAGE}>
         같은 프로그램을 이미 신청했어요.
         <br />
         날짜나 반이 달라도 한 번만 신청할 수 있어요.
       </Modal>
       {dialog?.kind === 'info' && (
-        <Modal open onClose={close} emoji={dialog.emoji} title={dialog.title}>
+        <Modal open onClose={close} icon={dialog.icon} tone={dialog.tone} title={dialog.title}>
           {dialog.text}
         </Modal>
       )}
@@ -187,7 +189,7 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
         <Modal
           open
           onClose={close}
-          emoji="💸"
+          icon={Wallet} tone="amber"
           title="자부담 강좌예요"
           actions={
             <>
@@ -213,7 +215,7 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
         <Modal
           open
           onClose={close}
-          emoji="↩️"
+          icon={Undo2} tone="slate"
           title="신청을 취소할까요?"
           actions={
             <>
@@ -247,7 +249,7 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
         </Modal>
       )}
       {dialog?.kind === 'missing' && (
-        <Modal open onClose={close} emoji="🧩" title="아직 빠진 강좌가 있어요">
+        <Modal open onClose={close} icon={Puzzle} tone="coral" title="아직 빠진 강좌가 있어요">
           <ul className="mt-1 space-y-1 text-left">
             {dialog.lines.map((l) => (
               <li key={l} className="rounded-xl bg-soft px-3 py-2 font-semibold text-ink">
@@ -257,7 +259,7 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
           </ul>
         </Modal>
       )}
-      <Modal open={dialog?.kind === 'submitted'} onClose={close} emoji="🎉" title="수강신청을 제출했어요">
+      <Modal open={dialog?.kind === 'submitted'} onClose={close} icon={PartyPopper} tone="mint" title="수강신청을 제출했어요">
         신청 기간 안에는 바꿀 수 있어요. 바꾸면 다시 제출해 주세요.
       </Modal>
     </Ctx.Provider>
@@ -280,7 +282,7 @@ function DetailAction({ c }: { c: Course }) {
   if (applied) {
     return (
       <div className="flex items-center gap-3">
-        <span className="flex-1 text-[15px] font-bold text-emerald-600">✅ 신청 완료</span>
+        <span className="flex flex-1 items-center gap-1.5 text-[15px] font-bold text-emerald-600"><CircleCheck size={19} aria-hidden /> 신청 완료</span>
         <Button variant="ghost" className="w-auto! shrink-0 px-6" loading={loading} disabled={!!busy || !!win} onClick={() => cancel(c)}>
           신청 취소
         </Button>
@@ -293,13 +295,13 @@ function DetailAction({ c }: { c: Course }) {
   if (rule) {
     return (
       <Button variant="ghost" onClick={() => apply(c)}>
-        {rule.code === 'DUP_CODE' ? '🙅 중복 신청 불가' : '📅 이 날짜는 이미 신청했어요'}
+        {rule.code === 'DUP_CODE' ? <><Ban size={18} aria-hidden /> 중복 신청 불가</> : <><CalendarX2 size={18} aria-hidden /> 이 날짜는 이미 신청했어요</>}
       </Button>
     );
   }
   return (
     <Button variant="brand" loading={loading} disabled={!!busy} onClick={() => apply(c)}>
-      {c.selfPay ? '💸 자부담 확인 후 신청하기' : '신청하기'}
+      {c.selfPay ? <><Wallet size={18} aria-hidden /> 자부담 확인 후 신청하기</> : '신청하기'}
     </Button>
   );
 }

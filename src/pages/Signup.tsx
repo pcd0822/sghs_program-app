@@ -1,3 +1,5 @@
+import { FilePenLine, Hourglass } from 'lucide-react';
+import { EmptyArt, IconTile } from '@/ui/Glyph';
 // 회원가입 신청(명단에 없는 학생). 승인되면 학생 명단에 등록되어 로그인할 수 있다.
 
 import { useState, type FormEvent } from 'react';
@@ -36,7 +38,7 @@ export function Signup() {
   if (done) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
-        <div className="text-6xl">⏳</div>
+        <EmptyArt icon={Hourglass} tone="amber" />
         <h1 className="text-[26px] font-extrabold">가입 신청을 보냈어요</h1>
         <p className="text-sub">관리자가 승인하면 같은 학번·이름·연락처로 로그인할 수 있어요.</p>
         <Link to="/" className="mt-6 w-full">
@@ -51,8 +53,8 @@ export function Signup() {
       <button type="button" onClick={() => nav('/login/student')} className="-ml-3 grid size-11 place-items-center rounded-full text-2xl hover:bg-soft" aria-label="뒤로">
         ‹
       </button>
-      <div className="mt-6 text-4xl">📝</div>
-      <h1 className="mt-3 text-[28px] font-extrabold tracking-tight">회원가입 신청</h1>
+      <IconTile icon={FilePenLine} tone="sky" size={56} className="mt-6" />
+      <h1 className="mt-4 text-[28px] font-extrabold tracking-tight">회원가입 신청</h1>
       <p className="mt-1 text-[15px] text-sub">학생 명단에 없을 때만 신청해 주세요. 관리자가 승인하면 로그인할 수 있어요.</p>
       <form onSubmit={submit} className="mt-8 flex flex-1 flex-col gap-4">
         <label className="block">

@@ -1,3 +1,5 @@
+import { CircleCheck, ClipboardList, Ticket } from 'lucide-react';
+import { Eyebrow } from '@/ui/Glyph';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Course } from '@shared/types';
@@ -26,8 +28,8 @@ export default function ApplyPage() {
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
       <header className="flex items-center justify-between pt-2">
         <div>
-          <p className="text-[14px] font-semibold text-sub">🎟️ 수강신청</p>
-          <h1 className="text-[24px] font-extrabold tracking-tight">{me?.name ? `${me.name}님, 반가워요 👋` : '반가워요 👋'}</h1>
+          <Eyebrow icon={Ticket} tone="violet" className="">수강신청</Eyebrow>
+          <h1 className="text-[24px] font-extrabold tracking-tight">{me?.name ? `${me.name}님, 반가워요` : '반가워요'}</h1>
         </div>
       </header>
 
@@ -44,7 +46,7 @@ export default function ApplyPage() {
               <Pill tone="blue">
                 선택 {prog.selectiveDone}/{prog.selectiveTotal}
               </Pill>
-              <Pill tone={app?.submitted ? 'green' : 'gray'}>{app?.submitted ? '✅ 제출 완료' : '미제출'}</Pill>
+              <Pill tone={app?.submitted ? 'green' : 'gray'}>{app?.submitted ? <><CircleCheck size={12} aria-hidden /> 제출 완료</> : '미제출'}</Pill>
             </>
           ) : (
             <span className="h-5 w-40 animate-pulse rounded-full bg-soft" />
@@ -64,7 +66,7 @@ export default function ApplyPage() {
           onClick={openMyList}
           className="mt-3 flex min-h-12 w-full items-center justify-between rounded-2xl bg-white px-4 text-[15px] font-bold shadow-sm ring-1 ring-line active:scale-[0.99]"
         >
-          <span>📋 내 신청 목록</span>
+          <span className="flex items-center gap-2"><ClipboardList size={18} className="text-brand-600" aria-hidden /> 내 신청 목록</span>
           <span className="text-brand-600">
             {count}개 <span aria-hidden>›</span>
           </span>
@@ -110,7 +112,7 @@ export default function ApplyPage() {
         onClick={openMyList}
         className="fixed right-[max(16px,calc(50vw-256px+16px))] bottom-[calc(max(env(safe-area-inset-bottom),12px)+76px)] z-30 flex min-h-12 items-center gap-1.5 rounded-full bg-ink px-4 text-[14px] font-bold text-white shadow-lg active:scale-95"
       >
-        📋 내 신청 <span className="rounded-full bg-white/20 px-1.5">{count}</span>
+        <ClipboardList size={17} aria-hidden /> 내 신청 <span className="rounded-full bg-white/20 px-1.5">{count}</span>
       </button>
     </main>
   );

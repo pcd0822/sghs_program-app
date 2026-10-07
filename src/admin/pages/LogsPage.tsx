@@ -1,3 +1,4 @@
+import { ShieldAlert, ShieldCheck } from 'lucide-react';
 import { collection, limit, orderBy, query, type Timestamp } from 'firebase/firestore';
 import { useQueryDocs } from '@/data/live';
 import { db } from '@/lib/firebase';
@@ -20,12 +21,12 @@ export default function LogsPage() {
   const lockedCount = (logs ?? []).filter((l) => l.locked).length;
   return (
     <div className="space-y-4">
-      <PageHead emoji="🔐" title="로그인 실패 기록" desc="교사 코드 로그인 실패 최근 200건. 같은 기기 5번 실패 → 5분 잠금, 같은 IP 1시간 30번 초과 → 30분 잠금." />
+      <PageHead icon={ShieldAlert} tone="slate" title="로그인 실패 기록" desc="교사 코드 로그인 실패 최근 200건. 같은 기기 5번 실패 → 5분 잠금, 같은 IP 1시간 30번 초과 → 30분 잠금." />
       <Card>
         {!logs ? (
           <div className="h-40 animate-pulse rounded-2xl bg-soft" />
         ) : logs.length === 0 ? (
-          <Empty emoji="🛡️" text="실패 기록이 없어요" />
+          <Empty icon={ShieldCheck} tone="mint" text="실패 기록이 없어요" />
         ) : (
           <>
             <p className="mb-2 text-[14px] text-sub">잠금으로 이어진 실패 {lockedCount}건</p>

@@ -1,5 +1,6 @@
 // 출결 체크 칸과 기록 처리. 학급출결(결석)과 교과수업출결(결과)이 같은 기록을 쓴다.
 
+import { X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { call } from '@/lib/call';
 import { formatDateTime } from '@/lib/format';
@@ -71,8 +72,8 @@ export function AttendCheck({ checked, pending, onLabel, offLabel, meta, onChang
           shown ? 'bg-rose-50 text-rose-600 ring-rose-200' : 'bg-white text-emerald-700 ring-line'
         }`}
       >
-        <span className={`grid size-5 place-items-center rounded-md text-[13px] ${shown ? 'bg-rose-500 text-white' : 'ring-1 ring-zinc-300'}`} aria-hidden>
-          {shown ? '✕' : ''}
+        <span className={`grid size-5 place-items-center rounded-md ${shown ? 'bg-rose-500 text-white' : 'ring-1 ring-zinc-300'}`} aria-hidden>
+          {shown && <X size={14} strokeWidth={3} />}
         </span>
         {shown ? onLabel : offLabel}
       </button>

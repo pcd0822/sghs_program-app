@@ -1,9 +1,12 @@
 // 주차별 시간표: 교시가 아닌 시간 블록. 학생·교사 화면이 함께 쓴다.
 
+import { BookOpen, Clapperboard, Compass, FileText, FolderOpen, Leaf, Megaphone, School, Sparkles, Utensils, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { TIME_ZONE, WEEKS } from '@shared/constants';
 import type { DayNote, FixedEvent } from '@shared/types';
 import { formatDate, minutes } from '@/lib/format';
+import { GraphicCover } from '@/ui/CourseThumb';
+import { EmptyArt } from '@/ui/Glyph';
 import { CalendarIcon, PinIcon } from '@/ui/Icons';
 import { Sheet } from '@/ui/Sheet';
 
@@ -15,7 +18,7 @@ export interface Block {
   end: string;
   title: string;
   sub?: string;
-  emoji?: string;
+  icon?: LucideIcon;
   tone: BlockTone;
   /** 같은 시간에 강좌가 많을 때(교사 시간표) 높이를 시간에 비례시키지 않는다 */
   compact?: boolean;
@@ -69,7 +72,7 @@ export function WeekView({ blocksFor, extrasFor, notes }: Props) {
 
       {!w ? (
         <div className="mt-16 text-center">
-          <div className="text-5xl">🗂️</div>
+          <EmptyArt icon={FolderOpen} tone="slate" />
           <p className="mt-3 font-semibold text-sub">저장된 시간표 정보가 없습니다</p>
           <button type="button" onClick={() => setWeek(week < 0 ? 0 : WEEKS.length - 1)} className="mt-4 min-h-11 rounded-full bg-soft px-5 font-semibold">
             {week < 0 ? '1주차로' : `${WEEKS.length}주차로`} 돌아가기
@@ -96,7 +99,7 @@ function DayCard({ date, blocks, extras, notes, today }: { date: string; blocks:
       </div>
       {notes.map((n) => (
         <p key={n.id} className="mt-1.5 flex gap-1.5 rounded-xl bg-sky-50 px-3 py-2 text-[13px] font-medium text-sky-800">
-          <span aria-hidden>📢</span>
+          <Megaphone size={15} className="mt-0.5 shrink-0" aria-hidden />
           {n.text}
         </p>
       ))}
@@ -116,7 +119,7 @@ function DayCard({ date, blocks, extras, notes, today }: { date: string; blocks:
               className={`flex flex-1 flex-col items-start rounded-2xl px-3.5 py-2.5 text-left ring-1 transition enabled:active:scale-[0.99] ${toneClass[b.tone]}`}
             >
               <span className="flex items-center gap-1.5 text-[15px] leading-snug font-bold">
-                {b.emoji && <span aria-hidden>{b.emoji}</span>}
+                {b.icon && <b.icon size={16} className={b.tone === 'missing' ? 'shrink-0' : 'shrink-0 text-brand-600'} aria-hidden />}
                 {b.title}
               </span>
               {b.sub && <span className="mt-0.5 text-[13px] text-sub">{b.sub}</span>}
@@ -136,9 +139,7 @@ export function FixedEventSheet({ ev, onClose }: { ev: FixedEvent | null; onClos
     <Sheet open={!!ev} onClose={onClose} title="학교 일정">
       {ev && (
         <div className="pb-4">
-          <div className="grid aspect-[4/3] w-full place-items-center rounded-[28px] bg-gradient-to-br from-zinc-100 to-sky-50 text-7xl" aria-hidden>
-            {eventEmoji(ev.title)}
-          </div>
+          <GraphicCover icon={eventIcon(ev.title)} from="#a5b4fc" to="#38bdf8" seed={ev.title} className="aspect-[4/3] w-full rounded-[28px]" />
           <h3 className="mt-4 text-[22px] font-extrabold">{ev.title}</h3>
           <dl className="mt-3 space-y-2.5 rounded-3xl bg-soft p-4 text-[15px]">
             <div className="flex items-center gap-2">
@@ -161,13 +162,13 @@ export function FixedEventSheet({ ev, onClose }: { ev: FixedEvent | null; onClos
   );
 }
 
-export function eventEmoji(title: string): string {
-  if (/독서/.test(title)) return '📖';
-  if (/점심|식사/.test(title)) return '🍱';
-  if (/정리/.test(title)) return '🧹';
-  if (/영화/.test(title)) return '🎬';
-  if (/줍깅|환경/.test(title)) return '🌿';
-  if (/진로/.test(title)) return '🧭';
-  if (/성적/.test(title)) return '📄';
-  return '🏫';
+export function eventIcon(title: string): LucideIcon {
+  if (/독서/.test(title)) return BookOpen;
+  if (/점심|식사/.test(title)) return Utensils;
+  if (/정리/.test(title)) return Sparkles;
+  if (/영화/.test(title)) return Clapperboard;
+  if (/줍깅|환경/.test(title)) return Leaf;
+  if (/진로/.test(title)) return Compass;
+  if (/성적/.test(title)) return FileText;
+  return School;
 }

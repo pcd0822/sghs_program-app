@@ -1,3 +1,5 @@
+import { Flame, Sprout, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { IconTile, type GlyphTone } from '@/ui/Glyph';
 // 강좌 목록·상세·Top 5. 학생과 교사 화면이 함께 쓴다(교사는 신청 버튼 없이).
 
 import type { ReactNode } from 'react';
@@ -20,7 +22,7 @@ export function CourseTags({ c }: { c: Course }) {
   return (
     <>
       {c.category === '필수' && <Pill tone="purple">필수</Pill>}
-      {c.selfPay && <Pill tone="orange">💸 자부담</Pill>}
+      {c.selfPay && <Pill tone="orange"><Wallet size={12} aria-hidden /> 자부담</Pill>}
     </>
   );
 }
@@ -86,22 +88,22 @@ export function CourseRowSkeleton() {
   );
 }
 
-/** 🔥 Hype / 🌱 여유 Top 5 가로 목록 */
+/** Hype / 여유 Top 5 가로 목록 */
 export function TopLists({ courses, onOpen }: { courses: Course[]; onOpen(c: Course): void }) {
   const hype = hypeTop(courses);
   const roomy = roomyTop(courses);
   return (
     <div className="space-y-6">
-      <TopStrip title="🔥 실시간 Hype 강좌" empty="아직 신청이 시작되지 않았어요" list={hype} onOpen={onOpen} hot />
-      <TopStrip title="🌱 여유 있는 강좌" empty="모든 강좌가 마감됐어요" list={roomy} onOpen={onOpen} />
+      <TopStrip icon={Flame} tone="coral" title="실시간 Hype 강좌" empty="아직 신청이 시작되지 않았어요" list={hype} onOpen={onOpen} hot />
+      <TopStrip icon={Sprout} tone="mint" title="여유 있는 강좌" empty="모든 강좌가 마감됐어요" list={roomy} onOpen={onOpen} />
     </div>
   );
 }
 
-function TopStrip({ title, list, empty, onOpen, hot }: { title: string; list: Course[]; empty: string; onOpen(c: Course): void; hot?: boolean }) {
+function TopStrip({ icon, tone, title, list, empty, onOpen, hot }: { icon: LucideIcon; tone: GlyphTone; title: string; list: Course[]; empty: string; onOpen(c: Course): void; hot?: boolean }) {
   return (
     <section>
-      <h2 className="px-1 text-[17px] font-extrabold">{title}</h2>
+      <h2 className="flex items-center gap-2 px-1 text-[17px] font-extrabold"><IconTile icon={icon} tone={tone} size={28} />{title}</h2>
       {list.length === 0 ? (
         <p className="mt-2 rounded-2xl bg-soft px-4 py-3 text-sm text-sub">{empty}</p>
       ) : (
@@ -110,7 +112,7 @@ function TopStrip({ title, list, empty, onOpen, hot }: { title: string; list: Co
             <li key={c.id} className="w-[148px] shrink-0 snap-start">
               <button type="button" onClick={() => onOpen(c)} className="w-full text-left active:scale-[0.98]">
                 <div className="relative">
-                  <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="aspect-square w-full rounded-2xl" emojiClass="text-5xl" />
+                  <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="aspect-square w-full rounded-2xl" />
                   <span className="absolute top-2 left-2 grid size-7 place-items-center rounded-full bg-white/90 text-[13px] font-extrabold shadow-sm">{i + 1}</span>
                 </div>
                 <p className="mt-1.5 line-clamp-1 text-[14px] font-bold">{c.name}</p>
@@ -148,7 +150,7 @@ export function CourseDetailSheet({ c, onClose, footer, notice }: DetailProps) {
     <Sheet open={!!c} onClose={onClose} title="강좌 상세" footer={c ? footer : undefined}>
       {c && (
         <div className="pb-2">
-          <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="aspect-[4/3] w-full rounded-[28px]" emojiClass="text-7xl" />
+          <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="aspect-[4/3] w-full rounded-[28px]" />
           <div className="mt-4 flex flex-wrap items-center gap-1.5">
             <Pill tone="gray">{c.type}</Pill>
             <CourseTags c={c} />
@@ -186,7 +188,7 @@ function Info({ icon, label, children }: { icon: ReactNode; label: string; child
 
 function Capacity({ c }: { c: Course }) {
   if (c.capacity === null) {
-    return <p className="mt-4 px-1 text-[15px] font-semibold text-brand-700">👥 3학년 전체가 함께하는 프로그램이에요</p>;
+    return <p className="mt-4 px-1 text-[15px] font-semibold text-brand-700"><Users size={17} className="mr-1.5 inline -mt-0.5" aria-hidden />3학년 전체가 함께하는 프로그램이에요</p>;
   }
   const pct = Math.min(100, Math.round(fillRatio(c) * 100));
   const full = isFull(c);

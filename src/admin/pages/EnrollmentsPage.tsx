@@ -1,3 +1,4 @@
+import { ClipboardList, Download, Puzzle, Trash2, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { checkPersonalRules, progress, requirements, type Application } from '@shared/rules';
 import { formatDate, formatDateTime, timeRange } from '@/lib/format';
@@ -8,7 +9,7 @@ import { Pill } from '@/ui/Pill';
 import { Sheet } from '@/ui/Sheet';
 import { useToast } from '@/ui/Toast';
 import { enrolled, useAdmin, type StudentRow } from '../AdminData';
-import { Card, PageHead, SmallButton, TableWrap } from '../ui';
+import { Card, PageHead, SmallButton, TableWrap, SearchBox } from '../ui';
 
 type Filter = 'all' | 'unsubmitted' | 'none';
 
@@ -66,16 +67,10 @@ export default function EnrollmentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHead emoji="📋" title="수강신청 내역" desc="학생을 고르면 신청을 추가·변경·삭제할 수 있어요(누르는 즉시 반영)." actions={<SmallButton onClick={exportXlsx}>⬇️ xlsx 내려받기</SmallButton>} />
+      <PageHead icon={ClipboardList} tone="sky" title="수강신청 내역" desc="학생을 고르면 신청을 추가·변경·삭제할 수 있어요(누르는 즉시 반영)." actions={<SmallButton onClick={exportXlsx}><Download size={16} aria-hidden /> xlsx 내려받기</SmallButton>} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          placeholder="🔍 학번 또는 이름"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="h-10 w-full rounded-full border border-line bg-white px-4 text-[14px] sm:w-64"
-        />
+        <SearchBox placeholder="학번 또는 이름" value={q} onChange={(e) => setQ(e.target.value)} />
         {(
           [
             ['all', '전체'],
@@ -120,7 +115,7 @@ export default function EnrollmentsPage() {
                     const its = items.filter((it) => it.date === d);
                     return (
                       <td key={d} className="max-w-[150px] text-[13px]">
-                        {its.length ? its.map((it) => <div key={it.code} className="truncate">{it.by === 'admin' ? '🛠️ ' : ''}{it.name}</div>) : <span className="text-zinc-300">—</span>}
+                        {its.length ? its.map((it) => <div key={it.code} className="truncate">{it.by === 'admin' && <Wrench size={12} className="mr-1 inline text-brand-600" aria-label="관리자 배정" />}{it.name}</div>) : <span className="text-zinc-300">—</span>}
                       </td>
                     );
                   })}
@@ -151,7 +146,7 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
     setBusy(true);
     try {
       const warning = await a.assign(s.sid, add, remove);
-      toast(warning ? `${okText} · ⚠️ ${warning}` : okText, warning ? 'info' : 'success');
+      toast(warning ? `${okText} · 주의: ${warning}` : okText, warning ? 'info' : 'success');
       setPicking(null);
     } catch (e) {
       toast((e as Error).message, 'error');
@@ -186,7 +181,7 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
                   <div key={id} className="mt-2 flex items-center gap-2">
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold">
-                        {it.by === 'admin' && '🛠️ '}
+                        {it.by === 'admin' && <Wrench size={13} className="mr-1 inline text-brand-600" aria-label="관리자 배정" />}
                         {it.name}
                       </span>
                       <span className="text-[12px] text-sub">
@@ -203,7 +198,7 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
                 ))}
                 {missing.length > 0 && (
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="flex-1 text-[14px] font-semibold text-orange-600">🧩 {missing.map((m) => (m.kind === 'required' ? `필수 「${m.course?.name}」` : '선택 1개')).join(', ')} 미신청</span>
+                    <span className="flex-1 text-[14px] font-semibold text-orange-600"><Puzzle size={15} className="mr-1 inline" aria-hidden />{missing.map((m) => (m.kind === 'required' ? `필수 「${m.course?.name}」` : '선택 1개')).join(', ')} 미신청</span>
                     <SmallButton tone="brand" disabled={busy} onClick={() => setPicking({ date: d, replace: null })}>
                       ＋ 추가
                     </SmallButton>
@@ -256,7 +251,7 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
       <Modal
         open={!!confirmDel}
         onClose={() => setConfirmDel(null)}
-        emoji="🗑️"
+        icon={Trash2} tone="rose"
         title="이 신청을 삭제할까요?"
         actions={
           <>

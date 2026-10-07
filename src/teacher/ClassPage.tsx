@@ -1,3 +1,5 @@
+import { ClipboardCheck, ClipboardList, Phone, School } from 'lucide-react';
+import { Eyebrow } from '@/ui/Glyph';
 import { collection, query, where } from 'firebase/firestore';
 import { useMemo, useState } from 'react';
 import { OPERATING_DATES, TIME_ZONE } from '@shared/constants';
@@ -35,7 +37,7 @@ export default function ClassPage() {
 
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
-      <p className="pt-2 text-[14px] font-semibold text-sub">🏫 학급출결</p>
+      <Eyebrow icon={School} tone="mint">학급출결</Eyebrow>
       <h1 className="text-[24px] font-extrabold tracking-tight">3학년 {classNo}반</h1>
 
       {allClasses && (
@@ -58,18 +60,19 @@ export default function ClassPage() {
       <div className="mt-3 grid grid-cols-2 rounded-full bg-soft p-1" role="tablist">
         {(
           [
-            ['att', '✅ 출결'],
-            ['status', '📋 신청 현황'],
+            ['att', ClipboardCheck, '출결'],
+            ['status', ClipboardList, '신청 현황'],
           ] as const
-        ).map(([k, label]) => (
+        ).map(([k, Icon, label]) => (
           <button
             key={k}
             type="button"
             role="tab"
             aria-selected={tab === k}
             onClick={() => setTab(k)}
-            className={`min-h-11 rounded-full text-[15px] font-bold transition ${tab === k ? 'bg-white shadow-sm' : 'text-sub'}`}
+            className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full text-[15px] font-bold transition ${tab === k ? 'bg-white shadow-sm' : 'text-sub'}`}
           >
+            <Icon size={17} aria-hidden />
             {label}
           </button>
         ))}
@@ -145,10 +148,10 @@ function AttendanceTab({
                   <span className="mr-1.5 text-[13px] font-semibold text-sub tabular-nums">{s.number}</span>
                   {s.name}
                 </p>
-                <p className="truncate text-[13px] text-sub">{todays.length ? todays.map((it) => `🎟️ ${it.name}`).join(' · ') : '신청 강좌 없음'}</p>
+                <p className="truncate text-[13px] text-sub">{todays.length ? todays.map((it) => it.name).join(' · ') : '신청 강좌 없음'}</p>
                 {phone && (
-                  <a href={`tel:${phone}`} className="text-[12px] text-brand-600 tabular-nums">
-                    📞 {phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}
+                  <a href={`tel:${phone}`} className="inline-flex items-center gap-1 text-[12px] text-brand-600 tabular-nums">
+                    <Phone size={12} aria-hidden /> {phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}
                   </a>
                 )}
               </div>

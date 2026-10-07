@@ -1,3 +1,4 @@
+import { Calculator, LayoutDashboard, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { periodState, progress, requirements } from '@shared/rules';
@@ -61,26 +62,26 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       <PageHead
-        emoji="📊"
+        icon={LayoutDashboard}
         title="현황판"
         desc={`신청 상태: ${stateText}${a.period?.closeAt && a.period.mode === 'auto' ? ` · ${formatDateTime(a.period.closeAt)} 마감` : ''}`}
         actions={
           <SmallButton onClick={recount} disabled={busy}>
-            {busy ? '점검 중…' : '🔢 인원 수 점검'}
+            {busy ? '점검 중…' : <><Calculator size={16} aria-hidden /> 인원 수 점검</>}
           </SmallButton>
         }
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="전체 학생" value={stats.total} />
-        <Stat label="✅ 제출" value={stats.submitted} tone="green" sub={`${stats.total ? Math.round((stats.submitted / stats.total) * 100) : 0}%`} />
-        <Stat label="🧩 신청 중(미제출)" value={stats.started} tone="orange" />
-        <Stat label="😶 아직 미신청" value={stats.none} tone="red" />
+        <Stat label="제출" value={stats.submitted} tone="green" sub={`${stats.total ? Math.round((stats.submitted / stats.total) * 100) : 0}%`} />
+        <Stat label="신청 중(미제출)" value={stats.started} tone="orange" />
+        <Stat label="아직 미신청" value={stats.none} tone="red" />
       </div>
 
       {(underFixed.length > 0 || over.length > 0) && (
         <Card className="ring-2 ring-orange-300">
-          <h2 className="text-[17px] font-extrabold">⚠️ 확인이 필요한 강좌</h2>
+          <h2 className="flex items-center gap-1.5 text-[17px] font-extrabold"><TriangleAlert size={18} className="text-amber-500" aria-hidden /> 확인이 필요한 강좌</h2>
           <ul className="mt-2 space-y-1.5">
             {over.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center gap-2 rounded-2xl bg-rose-50 px-3 py-2 text-[14px]">

@@ -1,3 +1,5 @@
+import { BookOpenCheck, Inbox } from 'lucide-react';
+import { EmptyArt, Eyebrow } from '@/ui/Glyph';
 import { collection, query, where } from 'firebase/firestore';
 import { useSearchParams } from 'react-router-dom';
 import type { Course } from '@shared/types';
@@ -29,13 +31,13 @@ export default function SubjectAttendancePage() {
 
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
-      <p className="pt-2 text-[14px] font-semibold text-sub">📚 교과수업출결</p>
+      <Eyebrow icon={BookOpenCheck} tone="mint">교과수업출결</Eyebrow>
       <h1 className="text-[24px] font-extrabold tracking-tight">내 담당 강좌 출석부</h1>
       {!courses ? (
         <div className="mt-4 h-40 animate-pulse rounded-3xl bg-soft" />
       ) : myCourses.length === 0 ? (
         <div className="mt-16 text-center text-sub">
-          <div className="text-5xl">📭</div>
+          <EmptyArt icon={Inbox} tone="slate" />
           <p className="mt-3">아직 배정된 강좌가 없어요.</p>
           <p className="text-[14px]">배정은 관리자가 대시보드에서 해요.</p>
         </div>
@@ -48,7 +50,7 @@ export default function SubjectAttendancePage() {
                 onClick={() => setParams({ c: c.id })}
                 className="flex w-full items-center gap-3 rounded-3xl p-3 text-left ring-1 ring-line transition hover:bg-soft active:scale-[0.99]"
               >
-                <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="size-14 rounded-2xl" emojiClass="text-2xl" />
+                <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="size-14 rounded-2xl" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-semibold text-sub">
                     {formatDate(c.date)} {timeRange(c)}

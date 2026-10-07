@@ -1,3 +1,4 @@
+import { Inbox, Lock, Megaphone, MessageCircle, Trash2 } from 'lucide-react';
 import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import type { Inquiry } from '@shared/types';
@@ -43,12 +44,12 @@ export default function BoardAdminPage() {
   return (
     <div className="space-y-4">
       <PageHead
-        emoji="💬"
+        icon={MessageCircle} tone="sky"
         title="문의·공지"
         desc={`답변 전 ${todo}건 · 비밀글을 포함한 모든 문의를 볼 수 있어요.`}
         actions={
           <SmallButton tone="brand" onClick={() => setNotice({ id: null, title: '', body: '' })}>
-            📢 공지 쓰기
+            <Megaphone size={16} aria-hidden /> 공지 쓰기
           </SmallButton>
         }
       />
@@ -76,7 +77,7 @@ export default function BoardAdminPage() {
         {!list ? (
           <div className="h-40 animate-pulse rounded-2xl bg-soft" />
         ) : rows.length === 0 ? (
-          <Empty emoji="📭" text="해당하는 글이 없어요" />
+          <Empty icon={Inbox} tone="slate" text="해당하는 글이 없어요" />
         ) : (
           <ul className="divide-y divide-line">
             {rows.map((x) => {
@@ -90,8 +91,8 @@ export default function BoardAdminPage() {
                   >
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1.5">
-                        {x.isNotice ? <Pill tone="purple">📢 공지</Pill> : x.answered ? <Pill tone="green">답변 완료</Pill> : <Pill tone="orange">답변 전</Pill>}
-                        {x.secret && <Pill tone="gray">🔒 비밀</Pill>}
+                        {x.isNotice ? <Pill tone="purple"><Megaphone size={12} aria-hidden /> 공지</Pill> : x.answered ? <Pill tone="green">답변 완료</Pill> : <Pill tone="orange">답변 전</Pill>}
+                        {x.secret && <Pill tone="gray"><Lock size={11} aria-hidden /> 비밀</Pill>}
                         <span className="text-[12px] text-sub">
                           {a ? `${a.sid} ${a.name}` : x.authorMasked} · {formatDateTime(x.createdAt)}
                         </span>
@@ -163,7 +164,7 @@ export default function BoardAdminPage() {
       <Modal
         open={!!del}
         onClose={() => setDel(null)}
-        emoji="🗑️"
+        icon={Trash2} tone="rose"
         title="이 글을 삭제할까요?"
         actions={
           <>
@@ -230,7 +231,7 @@ function AnswerSheet({ row, author, onClose, onDelete }: { row: Row; author?: { 
     >
       <div className="space-y-3 pb-4">
         <p className="text-[13px] text-sub">
-          {author ? `${author.sid} ${author.name}` : row.authorMasked} · {formatDateTime(row.createdAt)} {row.secret ? '· 🔒 비밀글' : '· 공개 글'}
+          {author ? `${author.sid} ${author.name}` : row.authorMasked} · {formatDateTime(row.createdAt)} {row.secret ? '· 비밀글' : '· 공개 글'}
         </p>
         <h3 className="text-[19px] font-extrabold">{row.title}</h3>
         <div className="rounded-2xl bg-soft p-3 text-[15px] leading-relaxed whitespace-pre-wrap">{row.body}</div>

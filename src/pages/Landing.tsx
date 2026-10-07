@@ -1,23 +1,13 @@
-import { collection, getDocs } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { Backpack, ChevronRight, KeyRound, type LucideIcon } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Course } from '@shared/types';
-import { db } from '@/lib/firebase';
 import { Button } from '@/ui/Button';
-import { courseEmoji } from '@/ui/CourseThumb';
+import { IconTile, type GlyphTone } from '@/ui/Glyph';
 import { Sheet } from '@/ui/Sheet';
-import { EmojiPops } from './EmojiPops';
+import { ShapePops } from './ShapePops';
 
 export default function Landing() {
-  const [emojis, setEmojis] = useState<string[]>([]);
   const [choose, setChoose] = useState(false);
-
-  useEffect(() => {
-    // 강좌에서 이모지 종류만 뽑는다(로그인 전에도 읽을 수 있는 공개 자료).
-    getDocs(collection(db, 'courses'))
-      .then((snap) => setEmojis([...new Set(snap.docs.map((d) => courseEmoji((d.data() as Course).type, (d.data() as Course).name)))]))
-      .catch(() => setEmojis([]));
-  }, []);
 
   return (
     <main className="relative mx-auto flex min-h-dvh max-w-lg flex-col overflow-hidden bg-white">
@@ -32,9 +22,9 @@ export default function Landing() {
       />
       <div className="absolute inset-x-0 top-[48%] h-[22%] bg-gradient-to-b from-transparent to-white" aria-hidden />
 
-      {/* 이모지가 불규칙하게 나타났다 사라지는 자리 */}
+      {/* 그림 타일과 도형이 불규칙하게 나타났다 사라지는 자리 */}
       <div className="relative h-[54dvh] min-h-[320px]">
-        <EmojiPops emojis={emojis} />
+        <ShapePops />
       </div>
 
       <section className="relative z-10 mt-auto px-6 pb-[max(env(safe-area-inset-bottom),28px)] text-center">
@@ -54,25 +44,23 @@ export default function Landing() {
 
       <Sheet open={choose} onClose={() => setChoose(false)} title="누구로 로그인할까요?">
         <div className="grid gap-3 pb-2">
-          <ChoiceLink to="/login/student" emoji="🎒" title="학생 로그인" desc="학번 · 이름 · 연락처" />
-          <ChoiceLink to="/login/teacher" emoji="🧑‍🏫" title="관리자(교사) 로그인" desc="4자리 코드" />
+          <ChoiceLink to="/login/student" icon={Backpack} tone="coral" title="학생 로그인" desc="학번 · 이름 · 연락처" />
+          <ChoiceLink to="/login/teacher" icon={KeyRound} tone="violet" title="관리자(교사) 로그인" desc="4자리 코드" />
         </div>
       </Sheet>
     </main>
   );
 }
 
-function ChoiceLink({ to, emoji, title, desc }: { to: string; emoji: string; title: string; desc: string }) {
+function ChoiceLink({ to, icon, tone, title, desc }: { to: string; icon: LucideIcon; tone: GlyphTone; title: string; desc: string }) {
   return (
     <Link to={to} className="flex min-h-18 items-center gap-4 rounded-3xl bg-soft px-5 py-4 transition hover:bg-line active:scale-[0.99]">
-      <span className="grid size-12 place-items-center rounded-2xl bg-white text-2xl shadow-sm">{emoji}</span>
+      <IconTile icon={icon} tone={tone} size={48} />
       <span className="flex-1">
         <span className="block text-[17px] font-bold">{title}</span>
         <span className="block text-sm text-sub">{desc}</span>
       </span>
-      <span className="text-sub" aria-hidden>
-        ›
-      </span>
+      <ChevronRight className="text-sub" size={20} aria-hidden />
     </Link>
   );
 }
