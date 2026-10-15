@@ -19,7 +19,7 @@ interface EnrQr {
   qrEndAt?: number;
 }
 
-/** 출석 QR 화면: 교사가 화면(전자칠판·TV)에 띄우고, 받기를 켠 동안만 학생 체크가 통한다. */
+/** 출석 QR 화면: 교사가 화면(전자칠판·TV)에 띄우고, QR 을 켠 동안만 학생 체크가 통한다. */
 export default function QrPage() {
   const { courseId = '' } = useParams();
   const nav = useNavigate();
@@ -34,6 +34,20 @@ export default function QrPage() {
   const ensured = useRef(false);
   const now = useNow(1000);
   const box = useRef<HTMLDivElement>(null);
+  // 이 화면에서 켠 QR. 끄지 않고 화면을 떠나면 자동으로 끈다(다른 선생님이 켠 QR 은 건드리지 않는다).
+  const openedHere = useRef(new Set<QrPhase>());
+  useEffect(() => {
+    const closeAll = () => {
+      for (const p of openedHere.current) void call('qrControl', { courseId, action: 'close', phase: p }, { retries: 1 }).catch(() => {});
+      openedHere.current.clear();
+    };
+    // 탭을 닫거나 다른 주소로 나갈 때도 최대한 끈다(못 끄면 30분 뒤 저절로 꺼짐).
+    window.addEventListener('pagehide', closeAll);
+    return () => {
+      window.removeEventListener('pagehide', closeAll);
+      closeAll();
+    };
+  }, [courseId]);
 
   // 처음 여는 강좌면 서버에서 QR 비밀값을 만든다(한 번만).
   useEffect(() => {
@@ -63,7 +77,8 @@ export default function QrPage() {
 
   const openUntil = qr ? (phase === 'start' ? qr.startOpenUntil : qr.endOpenUntil) : null;
   const isOpen = !!openUntil && openUntil > now;
-  const left = isOpen ? Math.ceil((openUntil - now) / 1000) : 0;
+  // 기기 시계가 서버보다 조금 늦으면 30분을 넘게 보이므로 상한을 둔다.
+  const left = isOpen ? Math.min(Math.ceil((openUntil - now) / 1000), QR_OPEN_MS / 1000) : 0;
   const scanned = enr?.filter((e) => typeof (phase === 'start' ? e.qrStartAt : e.qrEndAt) === 'number').length ?? 0;
   const done = enr?.filter((e) => typeof e.qrStartAt === 'number' && typeof e.qrEndAt === 'number').length ?? 0;
 
@@ -71,6 +86,8 @@ export default function QrPage() {
     setBusy(true);
     try {
       await call('qrControl', { courseId, action: open ? 'open' : 'close', phase });
+      if (open) openedHere.current.add(phase);
+      else openedHere.current.delete(phase);
     } catch (e) {
       toast((e as Error).message, 'error');
     } finally {
@@ -114,7 +131,7 @@ export default function QrPage() {
               className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full text-[15px] font-bold transition ${phase === p ? 'bg-white shadow-sm' : 'text-sub'}`}
             >
               {phaseLabel(p)} QR
-              {!!o && o > now && <span className="size-2 rounded-full bg-emerald-500" aria-label="받는 중" />}
+              {!!o && o > now && <span className="size-2 rounded-full bg-emerald-500" aria-label="켜짐" />}
             </button>
           );
         })}
@@ -127,31 +144,18 @@ export default function QrPage() {
         {isOpen ? <Radio className="shrink-0 text-emerald-600" aria-hidden /> : <TimerOff className="shrink-0 text-sub" aria-hidden />}
         <div className="min-w-0 flex-1">
           <p className={`text-[16px] font-bold ${isOpen ? 'text-emerald-700' : ''}`}>
-            {isOpen ? `${phaseLabel(phase)} 출석 받는 중 · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} 남음` : `${phaseLabel(phase)} 출석을 받지 않는 중`}
+            {isOpen ? `${phaseLabel(phase)} 출석 QR 켜짐 · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} 남음` : `${phaseLabel(phase)} 출석 QR 꺼짐`}
           </p>
           <p className="text-[13px] text-sub">
             {isOpen
-              ? `${QR_OPEN_MS / 60_000}분이 지나면 저절로 꺼져요.`
-              : '받기를 켜야 학생이 찍었을 때 출석이 돼요. 꺼져 있을 때 찍으면 거부돼요.'}
+              ? `${QR_OPEN_MS / 60_000}분이 지나거나 이 화면을 떠나면 저절로 꺼져요.`
+              : 'QR을 켜야 학생이 찍었을 때 출석이 돼요. 꺼져 있을 때 찍으면 거부돼요.'}
           </p>
         </div>
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        {isOpen ? (
-          <>
-            <Button variant="ghost" loading={busy} onClick={() => setOpen(false)}>
-              받기 끄기
-            </Button>
-            <Button variant="ghost" disabled={busy} onClick={() => setOpen(true)}>
-              {QR_OPEN_MS / 60_000}분 다시
-            </Button>
-          </>
-        ) : (
-          <Button variant="brand" className="col-span-2" loading={busy} disabled={!qr} onClick={() => setOpen(true)}>
-            {phaseLabel(phase)} 출석 받기 켜기
-          </Button>
-        )}
-      </div>
+      <Button className="mt-2" variant={isOpen ? 'primary' : 'brand'} loading={busy} disabled={!qr} onClick={() => setOpen(!isOpen)}>
+        {phaseLabel(phase)} 출석 QR {isOpen ? '끄기' : '켜기'}
+      </Button>
 
       <div ref={box} className="mt-4 flex flex-col items-center justify-center rounded-[28px] bg-white p-3 ring-1 ring-line [&:fullscreen]:rounded-none [&:fullscreen]:ring-0">
         <p className="text-[20px] font-extrabold" style={{ color: phase === 'start' ? '#059669' : '#7c3aed' }}>
@@ -191,7 +195,7 @@ export default function QrPage() {
         )}
       </div>
       <p className="mt-3 text-[13px] leading-relaxed text-sub">
-        저장한 이미지도 같은 QR이에요. 이미지를 붙여 두거나 사진으로 돌려도, 이 화면에서 받기를 켠 동안에만 출석이 인정돼요.
+        저장한 이미지도 같은 QR이에요. 이미지를 붙여 두거나 사진으로 돌려도, 이 화면에서 QR을 켠 동안에만 출석이 인정돼요.
       </p>
     </main>
   );

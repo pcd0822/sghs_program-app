@@ -12,7 +12,7 @@ const PHASE_COLOR: Record<QrPhase, string> = { start: '#059669', end: '#7c3aed' 
 
 /** 화면에 띄울 QR(SVG 문자열). 흰 여백 포함. */
 export function qrSvg(url: string): Promise<string> {
-  return QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 2, color: { dark: '#111111', light: '#ffffff' } });
+  return QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 2, color: { dark: '#000000', light: '#ffffff' } });
 }
 
 const FONT = '"Pretendard Variable", Pretendard, system-ui, -apple-system, sans-serif';
@@ -63,7 +63,7 @@ export async function downloadQrImage(c: Course, phase: QrPhase, url: string): P
   ctx.fillText(`${formatDate(c.date)} ${timeRange(c)} · ${c.place}`, W / 2, infoY);
 
   const qr = document.createElement('canvas');
-  await QRCode.toCanvas(qr, url, { errorCorrectionLevel: 'M', margin: 2, width: 900 });
+  await QRCode.toCanvas(qr, url, { errorCorrectionLevel: 'M', margin: 2, width: 900, color: { dark: '#000000', light: '#ffffff' } });
   ctx.drawImage(qr, (W - 900) / 2, infoY + 50, 900, 900);
 
   ctx.fillStyle = '#111111';
@@ -71,7 +71,7 @@ export async function downloadQrImage(c: Course, phase: QrPhase, url: string): P
   ctx.fillText('휴대폰 기본 카메라로 찍으세요', W / 2, H - 110);
   ctx.fillStyle = '#6b6b76';
   ctx.font = `500 30px ${FONT}`;
-  ctx.fillText('선생님이 받기를 켠 동안만 출석이 인정돼요 · 시작과 종료를 모두 찍어야 완료', W / 2, H - 58);
+  ctx.fillText('선생님이 QR을 켠 동안만 출석이 인정돼요 · 시작과 종료를 모두 찍어야 완료', W / 2, H - 58);
 
   const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
   if (!blob) throw new Error('이미지를 만들지 못했어요.');

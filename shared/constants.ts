@@ -30,5 +30,5 @@ export const LOGIN_GUARD = {
   teacherIp: { windowMs: 60 * 60_000, maxFails: 31, lockMs: 30 * 60_000 },
 };
 
-/** 교사가 출석 QR "받기"를 켜면 이 시간 뒤 저절로 꺼진다(끄는 걸 잊어도 사진 돌려 찍기가 계속 통하지 않게). */
+/** 교사가 출석 QR 을 켜면 이 시간 뒤 저절로 꺼진다(끄는 걸 잊어도 사진 돌려 찍기가 계속 통하지 않게). */
 export const QR_OPEN_MS = 30 * 60_000;

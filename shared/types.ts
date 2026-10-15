@@ -118,7 +118,7 @@ export interface SignupRequest {
 
 export type QrPhase = 'start' | 'end';
 
-/** courseQr/{강좌ID} — 출석 QR 비밀값과 받기 상태. 학생은 못 읽고 QR 권한 교사만 읽는다. 쓰기는 Functions 만. */
+/** courseQr/{강좌ID} — 출석 QR 비밀값과 켜짐 상태. 학생은 못 읽고 QR 권한 교사만 읽는다. 쓰기는 Functions 만. */
 export interface CourseQr {
   startKey: string;
   endKey: string;

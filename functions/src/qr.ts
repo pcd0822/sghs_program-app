@@ -1,7 +1,7 @@
 // 출석 QR: 강좌마다 시작 QR·종료 QR 두 개. 학생이 휴대폰 기본 카메라로 찍으면 앱 주소가 열리고,
 // 그 브라우저에 로그인된 본인 계정으로만 체크된다(학번을 입력받지 않는다 → 남의 출석을 대신 못 찍음).
 // - QR 안에는 강좌ID·시작/종료·비밀값이 들어 있다. 비밀값은 courseQr/{강좌ID} 에만 있고 학생은 못 읽는다.
-// - QR 은 이미지로 저장할 수 있으므로, 교사가 "받기"를 켠 동안(최대 QR_OPEN_MS)만 통한다.
+// - QR 은 이미지로 저장할 수 있으므로, 교사가 QR 을 켠 동안(최대 QR_OPEN_MS)만 통한다.
 // - 찍은 시각은 수강 기록(enrollments)에 남긴다 → 출석부 실시간 화면에 바로 보이고 따로 복사본을 두지 않는다.
 // - 둘 다 찍어야 "QR 완료". 미완료 학생을 결과로 바꾸는 건 교사가 버튼(markQrIncomplete)으로 한다.
 
@@ -32,7 +32,7 @@ async function requireQrTeacher(req: CallableRequest, courseId: string) {
   return { t, course };
 }
 
-/** 교사: QR 만들기(처음 한 번) · 받기 켜기 · 끄기 */
+/** 교사: QR 만들기(처음 한 번) · 켜기 · 끄기 */
 export const qrControl = onCall(async (req) => {
   const { courseId: rawId, action, phase } = (req.data ?? {}) as Record<string, unknown>;
   const courseId = readCourseId(rawId);
@@ -75,7 +75,7 @@ export const qrCheckin = onCall(async (req) => {
 
   const field = phase === 'start' ? 'qrStartAt' : 'qrEndAt';
   const now = Date.now();
-  // 이미 찍었으면 처음 시각을 그대로 둔다(두 번 찍어도 성공으로 본다). 받기가 꺼진 뒤 다시 찍어도 기록은 남아 있다.
+  // 이미 찍었으면 처음 시각을 그대로 둔다(두 번 찍어도 성공으로 본다). QR 이 꺼진 뒤 다시 찍어도 기록은 남아 있다.
   if (enrSnap.exists && typeof enrSnap.get(field) === 'number') {
     return { ok: true, already: true, at: enrSnap.get(field) as number, phase, other: enrSnap.get(phase === 'start' ? 'qrEndAt' : 'qrStartAt') ?? null };
   }
