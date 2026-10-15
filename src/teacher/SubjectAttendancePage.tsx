@@ -1,4 +1,10 @@
-import { BookOpenCheck, Inbox } from 'lucide-react';
+import { BookOpenCheck, Inbox, QrCode } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { call } from '@/lib/call';
+import { Button } from '@/ui/Button';
+import { Modal } from '@/ui/Modal';
+import { useToast } from '@/ui/Toast';
 import { EmptyArt, Eyebrow } from '@/ui/Glyph';
 import { collection, query, where } from 'firebase/firestore';
 import { useSearchParams } from 'react-router-dom';
@@ -8,7 +14,7 @@ import { db } from '@/lib/firebase';
 import { formatDate, timeRange } from '@/lib/format';
 import { CourseThumb } from '@/ui/CourseThumb';
 import { PinIcon } from '@/ui/Icons';
-import { AttendCheck, Avatar, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
+import { AttendCheck, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
 import { useTeacher } from './TeacherData';
 
 interface Enrollment {
@@ -19,6 +25,9 @@ interface Enrollment {
   number: number;
   photoUrl: string | null;
   date: string;
+  /** 출석 QR 찍은 시각 */
+  qrStartAt?: number;
+  qrEndAt?: number;
 }
 
 /** 교과수업출결: 내게 배정된 강좌 목록 → 강좌를 고르면 수강생 출석부 */
@@ -85,6 +94,27 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
   const { pending, toggle } = useAttendanceToggle(c.date);
   const list = [...(roster ?? [])].sort((a, b) => a.sid.localeCompare(b.sid));
   const absentCount = list.filter((s) => attMap.get(s.sid)?.absent).length;
+  const qrDone = (s: Enrollment) => typeof s.qrStartAt === 'number' && typeof s.qrEndAt === 'number';
+  const qrDoneCount = list.filter(qrDone).length;
+  // 일괄 결과 처리 대상: QR 을 다 찍지 않았고 아직 결과가 아닌 학생
+  const bulkTargets = list.filter((s) => !qrDone(s) && !attMap.get(s.sid)?.absent);
+  const [askBulk, setAskBulk] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const toast = useToast();
+  const nav = useNavigate();
+
+  async function runBulk() {
+    setBulkBusy(true);
+    try {
+      const r = await call<{ courseId: string }, { changed: number }>('markQrIncomplete', { courseId: c.id });
+      toast(`${r.changed}명을 결과로 바꿨어요.`, 'success');
+      setAskBulk(false);
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
@@ -95,13 +125,30 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
       <p className="mt-0.5 text-[14px] text-sub">
         {formatDate(c.date)} {timeRange(c)} · {c.place}
       </p>
+      <button
+        type="button"
+        onClick={() => nav(`/t/qr/${c.id}`)}
+        className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-ink px-4 text-[15px] font-bold text-white"
+      >
+        <QrCode size={18} aria-hidden /> 출석 QR 띄우기
+      </button>
 
-      <div className="sticky top-0 z-10 -mx-5 mt-3 flex gap-2 bg-white/90 px-5 py-2 backdrop-blur">
+      <div className="sticky top-0 z-10 -mx-5 mt-3 flex flex-wrap gap-2 bg-white/90 px-5 py-2 backdrop-blur">
         <span className="rounded-full bg-soft px-3 py-1.5 text-[14px] font-bold">수강생 {list.length}명</span>
         <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[14px] font-bold text-emerald-700">출석 {list.length - absentCount}</span>
         <span className="rounded-full bg-rose-50 px-3 py-1.5 text-[14px] font-bold text-rose-600">결과 {absentCount}</span>
+        <span className="rounded-full bg-brand-50 px-3 py-1.5 text-[14px] font-bold text-brand-700">QR 완료 {qrDoneCount}</span>
       </div>
       <p className="text-[13px] text-sub">체크하면 "결과", 비워 두면 "출석"이에요. 담임 선생님의 학급출결과 같은 기록이에요.</p>
+      {roster && bulkTargets.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setAskBulk(true)}
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl bg-rose-50 px-4 text-[14px] font-bold text-rose-600 ring-1 ring-rose-200"
+        >
+          QR 미완료 {bulkTargets.length}명 결과 처리
+        </button>
+      )}
 
       {!roster ? (
         <div className="mt-3 space-y-2">
@@ -119,6 +166,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-bold">{s.name}</p>
                 <p className="text-[13px] text-sub tabular-nums">{s.sid}</p>
+                <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
               </div>
               <AttendCheck
                 checked={!!attMap.get(s.sid)?.absent}
@@ -132,6 +180,26 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
           ))}
         </ul>
       )}
+
+      <Modal
+        open={askBulk}
+        onClose={() => setAskBulk(false)}
+        icon={QrCode}
+        tone="rose"
+        title={`QR 미완료 ${bulkTargets.length}명을 결과로 바꿀까요?`}
+        actions={
+          <>
+            <Button loading={bulkBusy} onClick={runBulk}>
+              결과로 바꾸기
+            </Button>
+            <Button variant="ghost" onClick={() => setAskBulk(false)}>
+              취소
+            </Button>
+          </>
+        }
+      >
+        시작 QR과 종료 QR 중 하나라도 찍지 않은 학생이에요. 그날 출결 기록이 "결과"가 되고, 담임 선생님 학급출결에는 "결석"으로 보여요. 나중에 한 명씩 다시 고칠 수 있어요.
+      </Modal>
     </main>
   );
 }

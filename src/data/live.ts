@@ -3,7 +3,7 @@
 import { collection, doc, onSnapshot, type Query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import type { Application } from '@shared/rules';
-import type { Course, PeriodConfig, Student, Teacher, TimetableConfig } from '@shared/types';
+import type { Course, CourseQr, PeriodConfig, Student, Teacher, TimetableConfig } from '@shared/types';
 import { byDateTime } from '@shared/rules';
 import { db } from '@/lib/firebase';
 
@@ -86,3 +86,6 @@ export function useNow(intervalMs = 1000): number {
   }, [intervalMs]);
   return now;
 }
+
+/** 출석 QR 비밀값·받기 상태(권한 있는 교사만 읽힘). null = 아직 없음 또는 권한 없음 */
+export const useCourseQr = (courseId: string | null) => useDoc<CourseQr>(courseId ? `courseQr/${courseId}` : null);

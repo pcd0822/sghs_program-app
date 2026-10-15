@@ -1,4 +1,5 @@
 import { BookOpenCheck, CalendarDays, School, Ticket, UserRound } from 'lucide-react';
+import { lazy, Suspense } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { BottomNav, type NavItem } from '@/ui/BottomNav';
 import ClassPage from './ClassPage';
@@ -7,6 +8,9 @@ import ProfilePage from './ProfilePage';
 import SubjectAttendancePage from './SubjectAttendancePage';
 import { TeacherDataProvider, useTeacher } from './TeacherData';
 import TeacherTimetablePage from './TeacherTimetablePage';
+
+// QR 만드는 부품은 QR 화면을 열 때만 불러온다.
+const QrPage = lazy(() => import('./QrPage'));
 
 function Layout() {
   const { homeroom } = useTeacher();
@@ -35,6 +39,15 @@ export default function TeacherApp() {
   return (
     <TeacherDataProvider>
       <Routes>
+        {/* QR 화면은 크게 띄우므로 아래 메뉴 없이 */}
+        <Route
+          path="qr/:courseId"
+          element={
+            <Suspense fallback={null}>
+              <QrPage />
+            </Suspense>
+          }
+        />
         <Route element={<Layout />}>
           <Route index element={<CoursesPage />} />
           <Route path="timetable" element={<TeacherTimetablePage />} />

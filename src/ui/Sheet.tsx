@@ -15,19 +15,23 @@ interface Props {
 /** 아래에서 올라오는 모달창 */
 export function Sheet({ open, onClose, title, children, footer, wide }: Props) {
   const panel = useRef<HTMLDivElement>(null);
+  // onClose 는 부모가 그릴 때마다 새로 만들어진다. effect 의존성에 넣으면 글자를 칠 때마다
+  // 창에 포커스를 다시 줘서 입력칸 포커스를 빼앗고 한글 조합이 자모 단위로 끊긴다 → ref 로 최신값만 참조.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current();
     window.addEventListener('keydown', onKey);
     panel.current?.focus();
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return createPortal(

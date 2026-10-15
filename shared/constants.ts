@@ -29,3 +29,6 @@ export const LOGIN_GUARD = {
   /** 같은 IP에서 1시간 안에 관리자 로그인 실패가 30회를 넘으면(31번째) IP 전체 잠금. */
   teacherIp: { windowMs: 60 * 60_000, maxFails: 31, lockMs: 30 * 60_000 },
 };
+
+/** 교사가 출석 QR "받기"를 켜면 이 시간 뒤 저절로 꺼진다(끄는 걸 잊어도 사진 돌려 찍기가 계속 통하지 않게). */
+export const QR_OPEN_MS = 30 * 60_000;

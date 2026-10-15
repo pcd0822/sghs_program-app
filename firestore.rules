@@ -75,6 +75,13 @@ service cloud.firestore {
       }
     }
 
+    // 출석 QR 비밀값·받기 상태: admin · 담임(1~9) · 전체 학급(0) · 그 강좌 담당 교사. 학생은 못 읽는다.
+    match /courseQr/{courseId} {
+      allow read: if isAdmin() || (isTeacher() && (tok().get('homeroom', null) is int
+        || tok().tid in get(/databases/$(database)/documents/courses/$(courseId)).data.teacherIds));
+      allow write: if false;
+    }
+
     match /adminLoginLogs/{id} {
       allow read: if isAdmin();
       allow write: if false;

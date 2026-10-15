@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import Landing from '@/pages/Landing';
 import { StudentLogin, TeacherLogin } from '@/pages/Login';
+import { pendingQrPath } from '@/pages/qrPending';
 import { Signup } from '@/pages/Signup';
 import { lazy, Suspense } from 'react';
 
@@ -10,6 +11,8 @@ const AdminApp = lazy(() => import('@/admin/AdminApp'));
 // 학생·교사 화면도 로그인한 뒤에 불러온다(첫 화면·로그인 화면을 가볍게)
 const StudentApp = lazy(() => import('@/student/StudentApp'));
 const TeacherApp = lazy(() => import('@/teacher/TeacherApp'));
+// 출석 QR 을 찍으면 열리는 화면
+const QrCheckin = lazy(() => import('@/pages/QrCheckin'));
 
 const Loading = () => (
   <div className="grid min-h-dvh place-items-center" aria-busy="true">
@@ -17,6 +20,17 @@ const Loading = () => (
   </div>
 );
 import { ToastProvider } from '@/ui/Toast';
+
+const qrRoute = (
+  <Route
+    path="/qr/:courseId/:phase/:key"
+    element={
+      <Suspense fallback={<Loading />}>
+        <QrCheckin />
+      </Suspense>
+    }
+  />
+);
 
 function AppRoutes() {
   const { session } = useAuth();
@@ -36,6 +50,7 @@ function AppRoutes() {
         <Route path="/login/student" element={<StudentLogin />} />
         <Route path="/login/teacher" element={<TeacherLogin />} />
         <Route path="/signup" element={<Signup />} />
+        {qrRoute}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -58,7 +73,9 @@ function AppRoutes() {
           )
         }
       />
-      <Route path="*" element={<Navigate to={home} replace />} />
+      {qrRoute}
+      {/* QR 을 찍고 로그인한 학생은 그 QR 주소로 돌아가 이어서 체크한다 */}
+      <Route path="*" element={<Navigate to={(session.claims.role === 'student' && pendingQrPath()) || home} replace />} />
     </Routes>
   );
 }

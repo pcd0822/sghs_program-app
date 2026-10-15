@@ -1,9 +1,9 @@
 // 출결 체크 칸과 기록 처리. 학급출결(결석)과 교과수업출결(결과)이 같은 기록을 쓴다.
 
-import { X } from 'lucide-react';
+import { Check, Minus, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { call } from '@/lib/call';
-import { formatDateTime } from '@/lib/format';
+import { formatClock, formatDateTime } from '@/lib/format';
 import { useToast } from '@/ui/Toast';
 
 export interface AttendanceDoc {
@@ -83,6 +83,23 @@ export function AttendCheck({ checked, pending, onLabel, offLabel, meta, onChang
         </span>
       )}
     </div>
+  );
+}
+
+/** 출석 QR 찍은 상태: 시작 · 종료 각각 시각 또는 미확인 */
+export function QrMarks({ start, end, label }: { start?: number; end?: number; label?: string }) {
+  const mark = (name: string, at?: number) => (
+    <span className={`inline-flex items-center gap-0.5 ${typeof at === 'number' ? 'text-emerald-700' : 'text-zinc-400'}`}>
+      {typeof at === 'number' ? <Check size={12} strokeWidth={3} aria-hidden /> : <Minus size={12} aria-hidden />}
+      {name} {typeof at === 'number' ? formatClock(at) : '안 찍음'}
+    </span>
+  );
+  return (
+    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] font-semibold tabular-nums">
+      <span className="text-sub">{label ? `${label} QR` : 'QR'}</span>
+      {mark('시작', start)}
+      {mark('종료', end)}
+    </p>
   );
 }
 

@@ -43,3 +43,7 @@ export function fromKstInput(v: string): number | null {
   const t = Date.parse(`${v}:00+09:00`);
   return Number.isNaN(t) ? null : t;
 }
+
+const clock = new Intl.DateTimeFormat('ko-KR', { timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit', hour12: false });
+/** ms → "09:58"(한국 시각) */
+export const formatClock = (ms: number) => clock.format(new Date(ms));

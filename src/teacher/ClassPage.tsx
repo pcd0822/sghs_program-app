@@ -9,7 +9,7 @@ import { useQueryDocs } from '@/data/live';
 import { db } from '@/lib/firebase';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Pill } from '@/ui/Pill';
-import { AttendCheck, Avatar, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
+import { AttendCheck, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
 import { useTeacher } from './TeacherData';
 
 const CLASSES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -109,6 +109,17 @@ function AttendanceTab({
     query(collection(db, 'attendance'), where('date', '==', date), where('classNo', '==', classNo)),
   );
   const attMap = toAttendanceMap(att);
+  // 그날 우리 반 학생들의 수강 기록(출석 QR 찍은 시각이 들어 있다)
+  const enr = useQueryDocs<{ sid: string; courseId: string; qrStartAt?: number; qrEndAt?: number }>(`cenr-${classNo}-${date}`, () =>
+    query(collection(db, 'enrollments'), where('date', '==', date), where('classNo', '==', classNo)),
+  );
+  const { courses } = useTeacher();
+  const courseName = (id: string) => courses?.find((c) => c.id === id)?.name ?? '';
+  const enrBySid = useMemo(() => {
+    const m = new Map<string, NonNullable<typeof enr>>();
+    for (const e of enr ?? []) m.set(e.sid, [...(m.get(e.sid) ?? []), e]);
+    return m;
+  }, [enr]);
   const { pending, toggle } = useAttendanceToggle(date);
   const absent = students.filter((s) => attMap.get(s.sid)?.absent).length;
 
@@ -149,6 +160,9 @@ function AttendanceTab({
                   {s.name}
                 </p>
                 <p className="truncate text-[13px] text-sub">{todays.length ? todays.map((it) => it.name).join(' · ') : '신청 강좌 없음'}</p>
+                {(enrBySid.get(s.sid) ?? []).map((e) => (
+                  <QrMarks key={e.courseId} start={e.qrStartAt} end={e.qrEndAt} label={(enrBySid.get(s.sid)?.length ?? 0) > 1 ? courseName(e.courseId) : undefined} />
+                ))}
                 {phone && (
                   <a href={`tel:${phone}`} className="inline-flex items-center gap-1 text-[12px] text-brand-600 tabular-nums">
                     <Phone size={12} aria-hidden /> {phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}

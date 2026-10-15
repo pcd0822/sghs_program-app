@@ -115,3 +115,21 @@ export interface SignupRequest {
   createdAt: number;
   reviewedAt: number | null;
 }
+
+export type QrPhase = 'start' | 'end';
+
+/** courseQr/{강좌ID} — 출석 QR 비밀값과 받기 상태. 학생은 못 읽고 QR 권한 교사만 읽는다. 쓰기는 Functions 만. */
+export interface CourseQr {
+  startKey: string;
+  endKey: string;
+  /** 받는 중이면 저절로 꺼지는 시각(ms), 꺼져 있으면 null */
+  startOpenUntil: number | null;
+  endOpenUntil: number | null;
+  updatedByName?: string;
+  updatedAt?: number;
+}
+
+/** QR 화면·이미지 다운로드 권한: admin · 담임(1~9) · 전체 학급(0) · 그 강좌 담당 교사 */
+export function canUseQr(t: { [k: string]: unknown }, teacherIds: string[] | undefined): boolean {
+  return t.admin === true || typeof t.homeroom === 'number' || (typeof t.tid === 'string' && (teacherIds ?? []).includes(t.tid));
+}

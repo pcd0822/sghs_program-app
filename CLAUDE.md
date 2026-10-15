@@ -70,3 +70,12 @@
 - 실서버 빌드는 `.env.production.local` 필수 — `scripts/check-env.mjs` 가 시험장 설정이 섞이면 막는다(hosting predeploy).
 - 운영 스크립트: `purge`(시험 자료 삭제), `export`(전체 xlsx 보관), `test:load -- --prod --yes`(실서버 동시 시험, 학생 공개 전만).
 - 첫 화면을 가볍게: 학생·교사·admin 화면, Storage, 엑셀, 마크다운은 필요할 때 불러온다(lazy).
+
+## 출석 QR (2026-10-15 추가, `functions/src/qr.ts`)
+- 강좌마다 시작 QR·종료 QR. 주소 `/qr/{강좌ID}/{start|end}/{비밀값}`. 학생은 휴대폰 기본 카메라로만 찍는다(앱 안 스캐너 없음 — 사용자 결정).
+  체크는 그 브라우저에 로그인된 본인 계정으로만(학번 입력 없음). 로그인 전이면 sessionStorage `pendingQr` 로 로그인 후 이어서 체크.
+- 비밀값·받기 상태는 `courseQr/{강좌ID}`(학생 못 읽음). 비밀값은 처음 한 번만 만들고 바꾸지 않는다(저장한 QR 이미지가 계속 통하도록).
+- QR 은 교사가 "받기"를 켠 동안만 통한다(`QR_OPEN_MS` 30분 뒤 저절로 꺼짐). 이미지 저장 가능하므로 이게 대리 출석 방지선.
+- QR 권한(열기·이미지 저장): admin · 담임(1~9) · 전체 학급(0) · 그 강좌 담당 교사 = `canUseQr`(shared/types). 규칙도 같은 기준.
+- 찍은 시각은 `enrollments.qrStartAt / qrEndAt`(별도 복사본 없음). 둘 다 있어야 "QR 완료".
+- 미완료 처리는 자동이 아니라 교사 버튼 `markQrIncomplete`(admin · 전체 학급 · 담당 교사만) → 그날 attendance 를 결과로. 이미 결과면 건너뜀.

@@ -1,9 +1,10 @@
-import { Presentation, Users } from 'lucide-react';
+import { Presentation, QrCode, Users } from 'lucide-react';
 // 교사 화면 전체가 함께 쓰는 자료: 강좌·교사 목록·시간표 설정과 강좌 상세(신청 버튼 없음).
 
 import { collection, getDocs } from 'firebase/firestore';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Course, Teacher, TimetableConfig } from '@shared/types';
+import { useNavigate } from 'react-router-dom';
+import { canUseQr, type Course, type Teacher, type TimetableConfig } from '@shared/types';
 import { useSession } from '@/auth/AuthProvider';
 import { CourseDetailSheet } from '@/courses/CourseParts';
 import { useCourses, useTeacherDoc, useTeachers, useTimetable } from '@/data/live';
@@ -54,7 +55,7 @@ export function TeacherDataProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      <CourseDetailSheet c={sel} onClose={() => setSelected(null)} notice={sel && <TeacherNotice c={sel} />} />
+      <CourseDetailSheet c={sel} onClose={() => setSelected(null)} notice={sel && <TeacherNotice c={sel} onLeave={() => setSelected(null)} />} />
     </Ctx.Provider>
   );
 }
@@ -66,8 +67,9 @@ export function useTeacher(): TeacherValue {
 }
 
 /** 상세 창 아래: 담당 교사, 정원 없는 강좌의 신청 인원 */
-function TeacherNotice({ c }: { c: Course }) {
-  const { teachers, tid } = useTeacher();
+function TeacherNotice({ c, onLeave }: { c: Course; onLeave(): void }) {
+  const { teachers, tid, homeroom, isAdmin } = useTeacher();
+  const nav = useNavigate();
   const [unlimitedCount, setUnlimitedCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -89,6 +91,18 @@ function TeacherNotice({ c }: { c: Course }) {
         <Presentation size={18} className="mr-1.5 inline -mt-0.5" aria-hidden />담당 교사: {names.length ? names.join(', ') : '아직 배정되지 않았어요'}
         {c.teacherIds?.includes(tid) && ' (나)'}
       </p>
+      {canUseQr({ tid, homeroom, admin: isAdmin }, c.teacherIds) && (
+        <button
+          type="button"
+          onClick={() => {
+            onLeave();
+            nav(`/t/qr/${c.id}`);
+          }}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-ink px-4 text-[15px] font-bold text-white"
+        >
+          <QrCode size={18} aria-hidden /> 출석 QR 열기
+        </button>
+      )}
     </div>
   );
 }
