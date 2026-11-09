@@ -79,3 +79,9 @@
 - QR 권한(열기·이미지 저장): admin · 담임(1~9) · 전체 학급(0) · 그 강좌 담당 교사 = `canUseQr`(shared/types). 규칙도 같은 기준.
 - 찍은 시각은 `enrollments.qrStartAt / qrEndAt`(별도 복사본 없음). 둘 다 있어야 "QR 완료".
 - 미완료 처리는 자동이 아니라 교사 버튼 `markQrIncomplete`(admin · 전체 학급 · 담당 교사만) → 그날 attendance 를 결과로. 이미 결과면 건너뜀.
+
+## 시간표 날짜 추가·교사 넓은 화면 (2026-11-09)
+- 시간표 날짜 = 기본 운영 기간(`OPERATING_DATES`) + admin 이 더한 날짜(`config/timetable.dates`) + 고정 일정이 있는 날짜. 계산은 `shared/timetable.ts` 의 `timetableDates`·`groupWeeks`(월요일 기준 주차) 한 곳에서.
+  학생·교사 `WeekView` 는 이 목록을 받는다(`WEEKS` 고정값 없음). 더한 날짜는 2026-11-01~2027-02-28 안, 서버가 중복·기본일을 걸러 저장.
+- 더한 날짜는 시간표(고정 일정·안내 문구)용이다. 출결 날짜(`OPERATING_DATES`)·강좌 날짜 범위는 그대로.
+- 교사 화면은 768px 이상에서 넓게(`md:max-w-6xl`). 학급출결·교과출결은 넓은 화면에서 표, 휴대폰에선 기존 목록. 시간표는 컨테이너 폭(`@3xl`) 기준 2열이라 학생 화면엔 영향 없음.

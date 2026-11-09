@@ -14,7 +14,7 @@ export default function ProfilePage() {
   const { me, homeroom, isAdmin, myCourses } = useTeacher();
   const role = homeroom === null ? '교과 교사' : homeroom === 0 ? '전체 학급 담당' : `3학년 ${homeroom}반 담임`;
   return (
-    <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
+    <main className="px-5 pt-[max(env(safe-area-inset-top),16px)] md:max-w-2xl">
       <Eyebrow icon={UserRound} tone="sky">프로필</Eyebrow>
       <div className="mt-4">
         <div>

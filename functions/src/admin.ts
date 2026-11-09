@@ -22,6 +22,7 @@ import {
 import { DEFAULT_DAY_NOTES } from '../../shared/defaults';
 import { checkPersonalRules, progress, type AppItem, type Application } from '../../shared/rules';
 import { parseSid, phoneDigits } from '../../shared/text';
+import { isBaseDate } from '../../shared/timetable';
 import type { Course, TimetableConfig } from '../../shared/types';
 import { auth, db, fail } from './app';
 import { refreshAttendanceViewers } from './attendance';
@@ -249,7 +250,9 @@ export const adminPublish = onCall({ timeoutSeconds: 300, memory: '512MiB' }, as
     summary.push('신청 일정 저장');
   }
   if (p.timetable) {
-    await db.doc('config/timetable').set(p.timetable);
+    // 더한 날짜는 중복·기본 운영일을 빼고 정렬해 둔다
+    const dates = [...new Set(p.timetable.dates ?? [])].filter((d) => !isBaseDate(d)).sort();
+    await db.doc('config/timetable').set({ fixedEvents: p.timetable.fixedEvents, dayNotes: p.timetable.dayNotes, dates });
     summary.push('시간표 저장');
   }
 

@@ -75,6 +75,8 @@ export interface DayNote {
 
 /** config/timetable */
 export interface TimetableConfig {
+  /** 기본 운영 기간(11.30.~12.11.) 밖에 admin 이 더한 날짜. 없으면 기본 기간만. */
+  dates?: string[];
   fixedEvents: FixedEvent[];
   dayNotes: DayNote[];
 }

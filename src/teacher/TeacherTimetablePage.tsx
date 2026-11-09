@@ -1,6 +1,7 @@
 import { CalendarDays } from 'lucide-react';
 import { Eyebrow } from '@/ui/Glyph';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { timetableDates } from '@shared/timetable';
 import type { FixedEvent } from '@shared/types';
 import { eventIcon, FixedEventSheet, WeekView, type Block } from '@/timetable/WeekView';
 import { courseLook } from '@/ui/CourseThumb';
@@ -10,6 +11,7 @@ import { useTeacher } from './TeacherData';
 export default function TeacherTimetablePage() {
   const { timetable, courses, tid, openCourse } = useTeacher();
   const [ev, setEv] = useState<FixedEvent | null>(null);
+  const dates = useMemo(() => timetableDates(timetable), [timetable]);
 
   function blocksFor(date: string): Block[] {
     const out: Block[] = (timetable?.fixedEvents ?? [])
@@ -40,7 +42,7 @@ export default function TeacherTimetablePage() {
         {timetable === undefined || !courses ? (
           <div className="mt-4 h-64 animate-pulse rounded-[28px] bg-soft" />
         ) : (
-          <WeekView blocksFor={blocksFor} notes={timetable?.dayNotes ?? []} />
+          <WeekView blocksFor={blocksFor} notes={timetable?.dayNotes ?? []} dates={dates} />
         )}
       </div>
       <FixedEventSheet ev={ev} onClose={() => setEv(null)} />

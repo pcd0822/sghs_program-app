@@ -1,7 +1,8 @@
 import { CalendarDays, Puzzle, Ticket } from 'lucide-react';
 import { Eyebrow } from '@/ui/Glyph';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { timetableDates } from '@shared/timetable';
 import type { FixedEvent } from '@shared/types';
 import { eventIcon, FixedEventSheet, WeekView, type Block } from '@/timetable/WeekView';
 import { useStudent } from './StudentData';
@@ -10,6 +11,7 @@ export default function TimetablePage() {
   const { timetable, items, byId, courses, prog, openCourse } = useStudent();
   const nav = useNavigate();
   const [ev, setEv] = useState<FixedEvent | null>(null);
+  const dates = useMemo(() => timetableDates(timetable), [timetable]);
   const fixed = timetable?.fixedEvents ?? [];
 
   function blocksFor(date: string): Block[] {
@@ -65,7 +67,7 @@ export default function TimetablePage() {
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
       <Eyebrow icon={CalendarDays} tone="amber">시간표</Eyebrow>
-      <h1 className="text-[24px] font-extrabold tracking-tight">나의 2주 일정</h1>
+      <h1 className="text-[24px] font-extrabold tracking-tight">나의 일정</h1>
       <div className="mt-2">
         {timetable === undefined ? (
           <div className="mt-4 space-y-4">
@@ -74,7 +76,7 @@ export default function TimetablePage() {
             ))}
           </div>
         ) : (
-          <WeekView blocksFor={blocksFor} notes={timetable?.dayNotes ?? []} />
+          <WeekView blocksFor={blocksFor} notes={timetable?.dayNotes ?? []} dates={dates} />
         )}
       </div>
       <FixedEventSheet ev={ev} onClose={() => setEv(null)} />

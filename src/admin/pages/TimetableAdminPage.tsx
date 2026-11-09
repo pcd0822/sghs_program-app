@@ -1,7 +1,7 @@
-import { CalendarDays, Megaphone } from 'lucide-react';
-import { useState } from 'react';
+import { CalendarDays, CalendarPlus, Megaphone } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { findOverlaps, overlapText } from '@shared/admin';
-import { OPERATING_DATES } from '@shared/constants';
+import { groupWeeks, isBaseDate, isTimetableDate, nextWeekdays, timetableDates, TIMETABLE_MAX, TIMETABLE_MIN } from '@shared/timetable';
 import type { DayNote, FixedEvent } from '@shared/types';
 import { formatDate, timeRange } from '@/lib/format';
 import { eventIcon } from '@/timetable/WeekView';
@@ -19,6 +19,28 @@ export default function TimetableAdminPage() {
   const tt = a.timetable;
   const [ev, setEv] = useState<{ e: FixedEvent; isNew: boolean } | null>(null);
   const [note, setNote] = useState<{ n: DayNote; isNew: boolean } | null>(null);
+  const [pick, setPick] = useState('');
+  const dates = useMemo(() => timetableDates(tt), [tt]);
+  const weeks = useMemo(() => groupWeeks(dates), [dates]);
+  const next = useMemo(() => nextWeekdays(dates), [dates]);
+
+  function addDates(list: string[]) {
+    const fresh = list.filter((d) => isTimetableDate(d) && !dates.includes(d));
+    if (!fresh.length) return toast(list.length === 1 && dates.includes(list[0]) ? '이미 시간표에 있는 날짜예요.' : '날짜를 골라 주세요.', 'error');
+    a.setTimetable({ ...tt, dates: [...new Set([...(tt.dates ?? []), ...fresh])].sort() });
+    toast(`${fresh.map(formatDate).join(', ')} 날짜를 더했어요. 고정 일정을 넣고 저장 및 배포를 눌러 주세요.`);
+    setPick('');
+  }
+
+  /** 더한 날짜 빼기: 그날 고정 일정도 함께 지우고, 안내 문구에서도 뺀다 */
+  function removeDate(d: string) {
+    a.setTimetable({
+      ...tt,
+      dates: (tt.dates ?? []).filter((x) => x !== d),
+      fixedEvents: tt.fixedEvents.filter((e) => e.date !== d),
+      dayNotes: tt.dayNotes.map((n) => ({ ...n, dates: n.dates.filter((x) => x !== d) })).filter((n) => n.dates.length > 0),
+    });
+  }
 
   function saveEvent() {
     if (!ev) return;
@@ -75,37 +97,62 @@ export default function TimetableAdminPage() {
         </ul>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {OPERATING_DATES.map((d) => {
-          const events = tt.fixedEvents.filter((e) => e.date === d).sort((x, y) => x.start.localeCompare(y.start));
-          const courses = a.courses.filter((c) => c.date === d);
-          const slots = [...new Set(courses.map((c) => `${c.start}~${c.end}`))];
-          return (
-            <Card key={d}>
-              <div className="flex items-center">
-                <h2 className="flex-1 text-[17px] font-extrabold">{formatDate(d)}</h2>
-                <SmallButton onClick={() => setEv({ e: { id: rid(), date: d, start: '08:30', end: '09:30', title: '', place: '', description: '' }, isNew: true })}>＋ 고정 일정</SmallButton>
-              </div>
-              {slots.length > 0 && <p className="mt-1 text-[12px] text-sub">강좌 운영 시간: {slots.join(', ')} ({courses.length}개)</p>}
-              <ul className="mt-2 space-y-1.5">
-                {events.length === 0 && <li className="text-[14px] text-sub">고정 일정 없음</li>}
-                {events.map((e) => (
-                  <li key={e.id} className="flex items-center gap-2 rounded-2xl bg-soft px-3 py-2">
-                    <span className="w-24 shrink-0 text-[13px] font-semibold text-sub tabular-nums">{timeRange(e)}</span>
-                    <span className="min-w-0 flex-1 truncate font-semibold">
-                      <EventGlyph title={e.title} /> {e.title} <span className="font-normal text-sub">{e.place}</span>
-                    </span>
-                    <SmallButton onClick={() => setEv({ e, isNew: false })}>수정</SmallButton>
-                    <SmallButton tone="danger" onClick={() => a.setTimetable({ ...tt, fixedEvents: tt.fixedEvents.filter((x) => x.id !== e.id) })}>
-                      삭제
-                    </SmallButton>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          );
-        })}
-      </div>
+      <Card>
+        <h2 className="flex items-center gap-1.5 text-[17px] font-extrabold"><CalendarPlus size={18} className="text-brand-600" aria-hidden /> 날짜 추가</h2>
+        <p className="mt-1 text-[13px] text-sub">기본 운영 기간(11.30.~12.11.) 뒤에도 날짜를 더해 시간표를 만들 수 있어요. 저장 및 배포를 누르면 학생·교사 시간표에도 보여요.</p>
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <Field label="날짜 하나" type="date" min={TIMETABLE_MIN} max={TIMETABLE_MAX} value={pick} onChange={(x) => setPick(x.target.value)} className="w-48" />
+          <SmallButton tone="brand" onClick={() => addDates([pick])}>＋ 이 날짜 추가</SmallButton>
+          <SmallButton onClick={() => addDates(next)}>＋ 다음 주 월~금 추가 ({formatDate(next[0])} ~ {formatDate(next[4])})</SmallButton>
+        </div>
+      </Card>
+
+      {weeks.map((w) => (
+        <section key={w.dates[0]} className="space-y-3">
+          <h2 className="text-[15px] font-extrabold text-sub">
+            {w.label} · {formatDate(w.dates[0])} ~ {formatDate(w.dates[w.dates.length - 1])}
+          </h2>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {w.dates.map((d) => {
+              const events = tt.fixedEvents.filter((e) => e.date === d).sort((x, y) => x.start.localeCompare(y.start));
+              const courses = a.courses.filter((c) => c.date === d);
+              const slots = [...new Set(courses.map((c) => `${c.start}~${c.end}`))];
+              return (
+                <Card key={d}>
+                  <div className="flex items-center">
+                    <h2 className="flex-1 text-[17px] font-extrabold">
+                      {formatDate(d)}
+                      {!isBaseDate(d) && <span className="ml-1.5 rounded-full bg-brand-50 px-2 py-0.5 align-middle text-[11px] font-bold text-brand-700">추가한 날짜</span>}
+                    </h2>
+                    {!isBaseDate(d) && (
+                      <SmallButton tone="danger" onClick={() => removeDate(d)}>
+                        날짜 빼기
+                      </SmallButton>
+                    )}
+                    <SmallButton onClick={() => setEv({ e: { id: rid(), date: d, start: '08:30', end: '09:30', title: '', place: '', description: '' }, isNew: true })}>＋ 고정 일정</SmallButton>
+                  </div>
+                  {slots.length > 0 && <p className="mt-1 text-[12px] text-sub">강좌 운영 시간: {slots.join(', ')} ({courses.length}개)</p>}
+                  <ul className="mt-2 space-y-1.5">
+                    {events.length === 0 && <li className="text-[14px] text-sub">고정 일정 없음</li>}
+                    {events.map((e) => (
+                      <li key={e.id} className="flex items-center gap-2 rounded-2xl bg-soft px-3 py-2">
+                        <span className="w-24 shrink-0 text-[13px] font-semibold text-sub tabular-nums">{timeRange(e)}</span>
+                        <span className="min-w-0 flex-1 truncate font-semibold">
+                          <EventGlyph title={e.title} /> {e.title} <span className="font-normal text-sub">{e.place}</span>
+                        </span>
+                        <SmallButton onClick={() => setEv({ e, isNew: false })}>수정</SmallButton>
+                        <SmallButton tone="danger" onClick={() => a.setTimetable({ ...tt, fixedEvents: tt.fixedEvents.filter((x) => x.id !== e.id) })}>
+                          삭제
+                        </SmallButton>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      ))}
 
       {ev && (
         <Sheet
@@ -146,7 +193,7 @@ export default function TimetableAdminPage() {
             <div>
               <span className="text-[13px] font-semibold text-sub">보일 날짜</span>
               <div className="mt-1 flex flex-wrap gap-1.5">
-                {OPERATING_DATES.map((d) => {
+                {dates.map((d) => {
                   const on = note.n.dates.includes(d);
                   return (
                     <button

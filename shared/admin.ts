@@ -1,6 +1,7 @@
 // admin 대시보드 "저장 및 배포" 자료 모양과 검사. 화면(미리 검사)과 서버(최종 검사)가 함께 쓴다.
 
 import { formatDate, parseSid, phoneDigits, timesOverlap } from './text';
+import { isTimetableDate, TIMETABLE_MAX, TIMETABLE_MIN } from './timetable';
 import type { Course, FixedEvent, PeriodConfig, Teacher, TimetableConfig } from './types';
 
 /** 대시보드에서 고칠 수 있는 강좌 항목(신청 인원 count 는 서버만 관리) */
@@ -81,13 +82,18 @@ export function overlapText(o: Overlap): string {
 }
 
 export function validateTimetable(t: TimetableConfig): string | null {
+  if (t.dates !== undefined) {
+    if (!Array.isArray(t.dates) || t.dates.length > 120) return '시간표 날짜 목록이 올바르지 않아요';
+    const bad = t.dates.find((d) => !isTimetableDate(d));
+    if (bad !== undefined) return `시간표에 더한 날짜 「${String(bad)}」가 올바르지 않아요(${TIMETABLE_MIN} ~ ${TIMETABLE_MAX})`;
+  }
   for (const e of t.fixedEvents) {
     if (!e.title.trim()) return `${formatDate(e.date)} 고정 일정 이름을 입력해 주세요`;
-    if (!ISO.test(e.date) || !HHMM.test(e.start) || !HHMM.test(e.end) || e.start >= e.end) return `고정 일정 「${e.title}」의 날짜·시간이 올바르지 않아요`;
+    if (!isTimetableDate(e.date) || !HHMM.test(e.start) || !HHMM.test(e.end) || e.start >= e.end) return `고정 일정 「${e.title}」의 날짜·시간이 올바르지 않아요`;
   }
   for (const n of t.dayNotes) {
     if (!n.text.trim()) return '빈 안내 문구가 있어요';
-    if (!n.dates.length || n.dates.some((d) => !ISO.test(d))) return `안내 문구 「${n.text}」의 날짜를 골라 주세요`;
+    if (!n.dates.length || n.dates.some((d) => !isTimetableDate(d))) return `안내 문구 「${n.text}」의 날짜를 골라 주세요`;
   }
   return null;
 }

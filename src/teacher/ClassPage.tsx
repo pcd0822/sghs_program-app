@@ -126,7 +126,7 @@ function AttendanceTab({
   return (
     <div>
       <div className="sticky top-0 z-10 -mx-5 bg-white/90 px-5 pt-3 pb-2 backdrop-blur">
-        <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]" role="tablist" aria-label="날짜 선택">
+        <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none] md:flex-wrap" role="tablist" aria-label="날짜 선택">
           {OPERATING_DATES.map((d) => (
             <button
               key={d}
@@ -147,7 +147,63 @@ function AttendanceTab({
         </div>
       </div>
 
-      <ul className="divide-y divide-line">
+      {/* 넓은 화면: 한 줄에 한 학생, 칸을 나눈 표 */}
+      <table className="mt-1 hidden w-full border-separate border-spacing-0 text-left md:table">
+        <thead className="text-[13px] text-sub">
+          <tr>
+            <th className="w-14 border-b border-line py-2.5 pl-2 font-semibold">번호</th>
+            <th className="w-44 border-b border-line py-2.5 font-semibold">학생</th>
+            <th className="border-b border-line py-2.5 pr-3 font-semibold">이날 신청 강좌</th>
+            <th className="w-64 border-b border-line py-2.5 pr-3 font-semibold">출석 QR</th>
+            <th className="w-36 border-b border-line py-2.5 font-semibold">연락처</th>
+            <th className="w-44 border-b border-line py-2.5 pr-2 text-right font-semibold">출결</th>
+          </tr>
+        </thead>
+        <tbody className="text-[15px]">
+          {students.map((s) => {
+            const todays = Object.values(appBySid.get(s.sid)?.items ?? {}).filter((it) => it.date === date);
+            const phone = phoneBySid.get(s.sid);
+            const enrs = enrBySid.get(s.sid) ?? [];
+            const isAbsent = !!attMap.get(s.sid)?.absent;
+            return (
+              <tr key={s.sid} className={isAbsent ? 'bg-rose-50/50' : 'hover:bg-soft/60'}>
+                <td className="border-b border-line py-2 pl-2 font-semibold text-sub tabular-nums">{s.number}</td>
+                <td className="border-b border-line py-2">
+                  <span className="flex items-center gap-2.5">
+                    <Avatar url={s.photoUrl} name={s.name} size={40} />
+                    <span className="font-bold">{s.name}</span>
+                  </span>
+                </td>
+                <td className="border-b border-line py-2 pr-3">
+                  {todays.length ? todays.map((it) => <div key={it.code} className="leading-snug">{it.name}</div>) : <span className="text-sub">신청 강좌 없음</span>}
+                </td>
+                <td className="border-b border-line py-2 pr-3">
+                  {enrs.length ? (
+                    enrs.map((e) => <QrMarks key={e.courseId} start={e.qrStartAt} end={e.qrEndAt} label={enrs.length > 1 ? courseName(e.courseId) : undefined} />)
+                  ) : (
+                    <span className="text-[13px] text-zinc-400">—</span>
+                  )}
+                </td>
+                <td className="border-b border-line py-2 text-[14px] tabular-nums">
+                  {phone ? (
+                    <a href={`tel:${phone}`} className="inline-flex items-center gap-1 text-brand-600">
+                      <Phone size={13} aria-hidden /> {phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}
+                    </a>
+                  ) : (
+                    <span className="text-zinc-400">—</span>
+                  )}
+                </td>
+                <td className="border-b border-line py-2 pr-2">
+                  <AttendCheck checked={isAbsent} pending={pending[s.sid]} onLabel="결석" offLabel="출석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* 휴대폰: 한 학생씩 쌓은 목록 */}
+      <ul className="divide-y divide-line md:hidden">
         {students.map((s) => {
           const todays = Object.values(appBySid.get(s.sid)?.items ?? {}).filter((it) => it.date === date);
           const phone = phoneBySid.get(s.sid);
@@ -243,7 +299,7 @@ function StatusTab({ students, appBySid }: { students: Student[]; appBySid: Map<
                   {dates.map((d) => {
                     const it = items.filter((x) => x.date === d);
                     return (
-                      <td key={d} className="max-w-[140px] border-b border-line px-2 py-2 align-top">
+                      <td key={d} className="max-w-[140px] border-b md:max-w-[220px] border-line px-2 py-2 align-top">
                         {it.length ? it.map((x) => <div key={x.code} className="line-clamp-2">{x.name}</div>) : <span className="text-zinc-300">—</span>}
                       </td>
                     );

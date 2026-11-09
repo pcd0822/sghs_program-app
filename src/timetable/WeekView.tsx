@@ -1,8 +1,9 @@
 // 주차별 시간표: 교시가 아닌 시간 블록. 학생·교사 화면이 함께 쓴다.
 
 import { BookOpen, Clapperboard, Compass, FileText, FolderOpen, Leaf, Megaphone, School, Sparkles, Utensils, type LucideIcon } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
-import { TIME_ZONE, WEEKS } from '@shared/constants';
+import { useMemo, useState, type ReactNode } from 'react';
+import { TIME_ZONE } from '@shared/constants';
+import { groupWeeks } from '@shared/timetable';
 import type { DayNote, FixedEvent } from '@shared/types';
 import { formatDate, minutes } from '@/lib/format';
 import { GraphicCover } from '@/ui/CourseThumb';
@@ -36,11 +37,13 @@ function todayIso(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE }).format(new Date());
 }
 
-/** 오늘이 들어 있는 주차, 없으면 1주차 */
-function initialWeek(): number {
+type Week = { label: string; dates: string[] };
+
+/** 오늘이 들어 있는 주차. 주 사이(주말 등)·시작 전이면 다가오는 주, 다 지났으면 마지막 주 */
+function initialWeek(weeks: Week[]): number {
   const t = todayIso();
-  const i = WEEKS.findIndex((w) => w.dates[0] <= t && t <= w.dates[w.dates.length - 1]);
-  return i < 0 ? 0 : i;
+  const i = weeks.findIndex((w) => t <= w.dates[w.dates.length - 1]);
+  return i < 0 ? Math.max(0, weeks.length - 1) : i;
 }
 
 interface Props {
@@ -49,14 +52,17 @@ interface Props {
   /** 날짜별 시간 없는 안내 카드(미신청 등) */
   extrasFor?(date: string): ReactNode;
   notes: DayNote[];
+  /** 시간표에 보일 날짜 전체(timetableDates) */
+  dates: string[];
 }
 
-export function WeekView({ blocksFor, extrasFor, notes }: Props) {
-  const [week, setWeek] = useState(initialWeek);
-  const w = WEEKS[week];
+export function WeekView({ blocksFor, extrasFor, notes, dates }: Props) {
+  const weeks = useMemo(() => groupWeeks(dates), [dates]);
+  const [week, setWeek] = useState(() => initialWeek(weeks));
+  const w = weeks[week];
 
   return (
-    <div>
+    <div className="@container">
       <div className="sticky top-0 z-20 -mx-5 flex items-center justify-between bg-white/90 px-5 py-2 backdrop-blur">
         <button type="button" onClick={() => setWeek((x) => x - 1)} className="grid size-11 place-items-center rounded-full text-2xl hover:bg-soft" aria-label="이전 주">
           ‹
@@ -74,12 +80,12 @@ export function WeekView({ blocksFor, extrasFor, notes }: Props) {
         <div className="mt-16 text-center">
           <EmptyArt icon={FolderOpen} tone="slate" />
           <p className="mt-3 font-semibold text-sub">저장된 시간표 정보가 없습니다</p>
-          <button type="button" onClick={() => setWeek(week < 0 ? 0 : WEEKS.length - 1)} className="mt-4 min-h-11 rounded-full bg-soft px-5 font-semibold">
-            {week < 0 ? '1주차로' : `${WEEKS.length}주차로`} 돌아가기
+          <button type="button" onClick={() => setWeek(week < 0 ? 0 : weeks.length - 1)} className="mt-4 min-h-11 rounded-full bg-soft px-5 font-semibold">
+            {week < 0 ? '1주차로' : `${weeks.length}주차로`} 돌아가기
           </button>
         </div>
       ) : (
-        <div className="mt-2 space-y-5">
+        <div className="mt-2 grid gap-5 @3xl:grid-cols-2 @3xl:items-start">
           {w.dates.map((d) => (
             <DayCard key={d} date={d} blocks={blocksFor(d)} extras={extrasFor?.(d)} notes={notes.filter((n) => n.dates.includes(d))} today={d === todayIso()} />
           ))}

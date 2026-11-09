@@ -51,7 +51,7 @@ export default function SubjectAttendancePage() {
           <p className="text-[14px]">배정은 관리자가 대시보드에서 해요.</p>
         </div>
       ) : (
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
           {myCourses.map((c) => (
             <li key={c.id}>
               <button
@@ -128,7 +128,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
       <button
         type="button"
         onClick={() => nav(`/t/qr/${c.id}`)}
-        className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-ink px-4 text-[15px] font-bold text-white"
+        className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-ink px-4 text-[15px] font-bold text-white md:w-auto md:px-6"
       >
         <QrCode size={18} aria-hidden /> 출석 QR 띄우기
       </button>
@@ -144,7 +144,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
         <button
           type="button"
           onClick={() => setAskBulk(true)}
-          className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl bg-rose-50 px-4 text-[14px] font-bold text-rose-600 ring-1 ring-rose-200"
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl bg-rose-50 md:w-auto md:px-6 px-4 text-[14px] font-bold text-rose-600 ring-1 ring-rose-200"
         >
           QR 미완료 {bulkTargets.length}명 결과 처리
         </button>
@@ -159,7 +159,46 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
       ) : list.length === 0 ? (
         <p className="mt-10 text-center text-sub">아직 신청한 학생이 없어요.</p>
       ) : (
-        <ul className="mt-2 divide-y divide-line">
+        <>
+        {/* 넓은 화면: 칸을 나눈 표 */}
+        <table className="mt-2 hidden w-full border-separate border-spacing-0 text-left md:table">
+          <thead className="text-[13px] text-sub">
+            <tr>
+              <th className="w-24 border-b border-line py-2.5 pl-2 font-semibold">학번</th>
+              <th className="border-b border-line py-2.5 font-semibold">학생</th>
+              <th className="w-24 border-b border-line py-2.5 font-semibold">학급</th>
+              <th className="w-72 border-b border-line py-2.5 pr-3 font-semibold">출석 QR</th>
+              <th className="w-44 border-b border-line py-2.5 pr-2 text-right font-semibold">출결</th>
+            </tr>
+          </thead>
+          <tbody className="text-[15px]">
+            {list.map((s) => {
+              const isAbsent = !!attMap.get(s.sid)?.absent;
+              return (
+                <tr key={s.sid} className={isAbsent ? 'bg-rose-50/50' : 'hover:bg-soft/60'}>
+                  <td className="border-b border-line py-2 pl-2 font-semibold text-sub tabular-nums">{s.sid}</td>
+                  <td className="border-b border-line py-2">
+                    <span className="flex items-center gap-2.5">
+                      <Avatar url={s.photoUrl} name={s.name} size={40} />
+                      <span className="font-bold">{s.name}</span>
+                    </span>
+                  </td>
+                  <td className="border-b border-line py-2 text-sub tabular-nums">
+                    {s.classNo}반 {s.number}번
+                  </td>
+                  <td className="border-b border-line py-2 pr-3">
+                    <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
+                  </td>
+                  <td className="border-b border-line py-2 pr-2">
+                    <AttendCheck checked={isAbsent} pending={pending[s.sid]} onLabel="결과" offLabel="출석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {/* 휴대폰: 한 학생씩 쌓은 목록 */}
+        <ul className="mt-2 divide-y divide-line md:hidden">
           {list.map((s) => (
             <li key={s.sid} className="flex items-center gap-3 py-2.5">
               <Avatar url={s.photoUrl} name={s.name} size={44} />
@@ -179,6 +218,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
             </li>
           ))}
         </ul>
+        </>
       )}
 
       <Modal

@@ -22,7 +22,7 @@ export default function CoursesPage() {
         {myCourses.length === 0 ? (
           <p className="mt-1 text-[14px] text-sub">아직 배정된 강좌가 없어요. 배정은 관리자가 대시보드에서 해요.</p>
         ) : (
-          <ul className="mt-2 space-y-1.5">
+          <ul className="mt-2 grid gap-1.5 md:grid-cols-2">
             {myCourses.map((c) => (
               <li key={c.id}>
                 <button type="button" onClick={() => openCourse(c)} className="flex min-h-11 w-full items-center gap-2 rounded-2xl bg-white px-3 text-left text-[14px] shadow-sm ring-1 ring-line">

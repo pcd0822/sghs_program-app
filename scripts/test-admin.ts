@@ -68,6 +68,18 @@ check('강좌 시간과 겹치는 고정 일정 → 거부', r.error?.status ===
 r = await callAs(ADMIN, 'adminPublish', { courses: { upsert: [{ ...input(await course('P03-1201')), start: '08:00', end: '09:00' }], remove: [] } });
 check('고정 일정과 겹치게 강좌 시간 변경 → 거부', r.error?.status === 'FAILED_PRECONDITION');
 
+// ── 운영 기간 뒤 날짜 더하기(12.14. 이후 시간표)
+const ev1214 = { id: 'x1214', date: '2026-12-14', start: '09:00', end: '10:00', title: '추가 일정', place: '교실', description: '' };
+r = await callAs(ADMIN, 'adminPublish', {
+  timetable: { ...tt, dates: ['2026-12-15', '2026-12-14', '2026-12-14', '2026-12-01'], fixedEvents: [...tt.fixedEvents, ev1214] },
+});
+const tt2 = (await db.doc('config/timetable').get()).data()!;
+check('12.14. 이후 날짜·고정 일정 저장', !r.error && JSON.stringify(tt2.dates) === JSON.stringify(['2026-12-14', '2026-12-15']), r.error?.message ?? JSON.stringify(tt2.dates));
+check('→ 고정 일정도 저장됨', (tt2.fixedEvents as { id: string }[]).some((e) => e.id === 'x1214'));
+r = await callAs(ADMIN, 'adminPublish', { timetable: { ...tt, dates: ['2026-12-32'] } });
+check('없는 날짜 더하기 → 거부', r.error?.status === 'INVALID_ARGUMENT', r.error?.message);
+await db.doc('config/timetable').set(tt);
+
 // ── 검사
 r = await callAs(ADMIN, 'adminPublish', { period: { mode: 'auto', openAt: 2000, closeAt: 1000 } });
 check('마감이 시작보다 빠른 신청 기간 → 거부', r.error?.status === 'INVALID_ARGUMENT');
