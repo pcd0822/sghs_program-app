@@ -82,7 +82,7 @@ export default function EnrollmentsPage() {
             key={k}
             type="button"
             onClick={() => setFilter(k)}
-            className={`min-h-9 rounded-full px-3 text-[13px] font-bold ${filter === k ? 'bg-ink text-white' : 'bg-white text-sub ring-1 ring-line'}`}
+            className={`min-h-9 rounded-full px-3 text-[13px] font-bold ${filter === k ? 'bg-ink text-white' : 'bg-white/60 text-sub ring-1 ring-white/80 hover:bg-white/85'}`}
           >
             {label}
           </button>
@@ -175,7 +175,7 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
             const mine = Object.entries(items).filter(([, it]) => it.date === d);
             const missing = p.missing.filter((m) => m.date === d);
             return (
-              <li key={d} className="rounded-2xl p-3 ring-1 ring-line">
+              <li key={d} className="rounded-2xl bg-white/50 p-3 ring-1 ring-white/80">
                 <p className="text-[15px] font-extrabold">{formatDate(d)}</p>
                 {mine.map(([id, it]) => (
                   <div key={id} className="mt-2 flex items-center gap-2">
@@ -227,7 +227,7 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
                       type="button"
                       disabled={!!rule || busy}
                       onClick={() => run(c.id, picking.replace, `「${c.name}」 ${picking.replace ? '(으)로 변경' : '배정'}했어요`)}
-                      className="flex w-full items-center gap-3 rounded-2xl p-3 text-left ring-1 ring-line hover:bg-soft disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex w-full items-center gap-3 rounded-2xl bg-white/50 p-3 text-left ring-1 ring-white/80 hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block font-bold">{c.name}</span>

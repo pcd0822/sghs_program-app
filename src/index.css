@@ -15,9 +15,12 @@
   --color-coral-400: #fb923c;
 
   --color-ink: #111114;
-  --color-sub: #6b6b76;
-  --color-line: #ececf0;
-  --color-soft: #f6f6f8;
+  --color-sub: #63636e;
+  /* 선·옅은 바탕은 반투명: 유리 위에서도, 흰 바탕 위에서도 같은 농도로 보인다 */
+  --color-line: rgb(17 17 20 / 0.08);
+  --color-soft: rgb(17 17 20 / 0.045);
+  /* 앱 바탕(유리 뒤에 비치는 색) */
+  --color-canvas: #f5f3fa;
 
   --animate-sheet-up: sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
   --animate-fade-in: fade-in 0.2s ease-out;
@@ -51,9 +54,24 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-white text-ink font-sans antialiased;
+    @apply text-ink font-sans antialiased;
+    background-color: var(--color-canvas);
     word-break: keep-all;
     overflow-wrap: anywhere;
+  }
+  /* 리퀴드 글래스 뒤에 비치는 은은한 색 번짐. 화면에 고정해 스크롤해도 움직이지 않는다. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(42rem 30rem at 8% -6%, rgb(167 139 250 / 0.38), transparent 70%),
+      radial-gradient(36rem 28rem at 100% 8%, rgb(251 146 60 / 0.22), transparent 70%),
+      radial-gradient(34rem 30rem at -10% 62%, rgb(125 211 252 / 0.30), transparent 70%),
+      radial-gradient(40rem 32rem at 105% 96%, rgb(110 231 183 / 0.26), transparent 70%),
+      radial-gradient(30rem 24rem at 50% 50%, rgb(251 113 133 / 0.10), transparent 70%);
   }
   input, button, textarea, select {
     font: inherit;
@@ -69,6 +87,51 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* 리퀴드 글래스: 반투명 흰 판 + 뒤를 흐리게 + 위쪽 빛 테두리 + 부드러운 그림자.
+   글래스 = 카드·목록 판 / glass-thick = 떠 있는 창·메뉴(글이 많아 더 불투명) / glass-bar = 위에 붙는 막대 */
+@utility glass {
+  background-color: rgb(255 255 255 / 0.58);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    inset 0 -1px 0 rgb(255 255 255 / 0.3),
+    0 1px 2px rgb(17 17 20 / 0.04),
+    0 14px 34px -18px rgb(76 29 149 / 0.28);
+}
+@utility glass-thick {
+  background-color: rgb(255 255 255 / 0.8);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.85);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 1),
+    0 2px 6px rgb(17 17 20 / 0.05),
+    0 24px 60px -20px rgb(46 16 101 / 0.35);
+}
+@utility glass-bar {
+  background-color: rgb(250 249 253 / 0.66);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.7), 0 6px 18px -14px rgb(46 16 101 / 0.3);
+}
+/* 유리 안의 작은 알약·칸(선택된 탭, 작은 버튼): 더 밝은 유리 렌즈 */
+@utility glass-lens {
+  background-color: rgb(255 255 255 / 0.88);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 1),
+    0 1px 2px rgb(17 17 20 / 0.06),
+    0 6px 14px -8px rgb(76 29 149 / 0.3);
+}
+
+/* 흐림 효과를 못 쓰는 브라우저: 더 불투명하게 해 글씨가 묻히지 않게 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background-color: rgb(255 255 255 / 0.9); }
+  .glass-thick { background-color: rgb(255 255 255 / 0.97); }
+  .glass-bar { background-color: rgb(250 249 253 / 0.95); }
 }
 
 @utility pb-safe {

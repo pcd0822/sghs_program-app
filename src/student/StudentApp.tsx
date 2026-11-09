@@ -16,7 +16,7 @@ const NAV: NavItem[] = [
 
 function Layout() {
   return (
-    <div className="mx-auto min-h-dvh max-w-lg bg-white pb-28">
+    <div className="mx-auto min-h-dvh max-w-lg pb-28">
       <Outlet />
       <BottomNav items={NAV} />
     </div>

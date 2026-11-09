@@ -26,7 +26,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-      <section className="mt-5 rounded-3xl p-4 ring-1 ring-line">
+      <section className="glass mt-5 rounded-[28px] p-4">
         <h2 className="mb-3 text-[15px] font-bold">프로필 사진</h2>
         <PhotoEditor url={me?.photoUrl} name={me?.name ?? ''} />
       </section>

@@ -26,8 +26,8 @@ export function Modal({ open, onClose, icon, tone, title, children, actions }: P
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-[60] grid place-items-center px-6">
-      <div className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
-      <div role="alertdialog" aria-modal="true" aria-label={title} className="animate-fade-in relative w-full max-w-sm rounded-[28px] bg-white p-6 text-center shadow-2xl">
+      <div className="animate-fade-in absolute inset-0 bg-[#1b1530]/30 backdrop-blur-[3px]" onClick={onClose} aria-hidden />
+      <div role="alertdialog" aria-modal="true" aria-label={title} className="animate-fade-in relative w-full max-w-sm rounded-[32px] glass-thick p-6 text-center">
         {icon && <IconTile icon={icon} tone={tone} size={60} />}
         <h2 className="mt-4 text-xl font-extrabold">{title}</h2>
         {children && <div className="mt-2 text-[15px] leading-relaxed text-sub">{children}</div>}

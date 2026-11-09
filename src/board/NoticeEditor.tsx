@@ -69,7 +69,7 @@ export function NoticeEditor({ value, onChange }: Props) {
 
   const btn = 'min-h-10 min-w-10 rounded-xl px-2.5 text-[14px] font-semibold hover:bg-white';
   return (
-    <div className="rounded-2xl ring-1 ring-line">
+    <div className="rounded-2xl bg-white/50 ring-1 ring-white/80">
       <div className="flex flex-wrap items-center gap-1 rounded-t-2xl bg-soft p-1.5" role="toolbar" aria-label="글 꾸미기">
         <button type="button" className={`${btn} font-extrabold`} onClick={() => wrap('**')} title="굵게">
           B

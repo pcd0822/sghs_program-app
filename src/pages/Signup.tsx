@@ -1,4 +1,4 @@
-import { FilePenLine, Hourglass } from 'lucide-react';
+import { ChevronLeft, FilePenLine, Hourglass } from 'lucide-react';
 import { EmptyArt, IconTile } from '@/ui/Glyph';
 // 회원가입 신청(명단에 없는 학생). 승인되면 학생 명단에 등록되어 로그인할 수 있다.
 
@@ -33,7 +33,7 @@ export function Signup() {
     }
   }
 
-  const field = 'mt-1.5 block h-14 w-full rounded-2xl border border-line bg-soft px-4 text-[17px] outline-none focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100';
+  const field = 'mt-1.5 block h-14 w-full rounded-2xl border border-white/80 bg-white/60 px-4 text-[17px] outline-none backdrop-blur-md focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100';
 
   if (done) {
     return (
@@ -50,8 +50,8 @@ export function Signup() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pt-[max(env(safe-area-inset-top),12px)] pb-[max(env(safe-area-inset-bottom),24px)]">
-      <button type="button" onClick={() => nav('/login/student')} className="-ml-3 grid size-11 place-items-center rounded-full text-2xl hover:bg-soft" aria-label="뒤로">
-        ‹
+      <button type="button" onClick={() => nav('/login/student')} className="-ml-3 grid size-11 place-items-center rounded-full hover:bg-white/60" aria-label="뒤로">
+        <ChevronLeft size={24} aria-hidden />
       </button>
       <IconTile icon={FilePenLine} tone="sky" size={56} className="mt-6" />
       <h1 className="mt-4 text-[28px] font-extrabold tracking-tight">회원가입 신청</h1>

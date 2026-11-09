@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -36,27 +37,27 @@ export function Sheet({ open, onClose, title, children, footer, wide }: Props) {
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="animate-fade-in absolute inset-0 bg-[#1b1530]/30 backdrop-blur-[3px]" onClick={onClose} aria-hidden />
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className={`animate-sheet-up relative flex max-h-[92dvh] w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} flex-col rounded-t-[28px] bg-white shadow-2xl outline-none`}
+        className={`animate-sheet-up relative flex max-h-[92dvh] w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} flex-col rounded-t-[32px] glass-thick border-b-0 outline-none`}
       >
         <div className="flex shrink-0 items-center justify-between px-5 pt-3">
-          <span className="mx-auto h-1.5 w-10 rounded-full bg-line" aria-hidden />
+          <span className="mx-auto h-1.5 w-10 rounded-full bg-ink/15" aria-hidden />
         </div>
         <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-2">
           <h2 className="text-lg font-bold">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="-mr-2 grid size-11 place-items-center rounded-full text-xl text-sub hover:bg-soft"
+            className="-mr-2 grid size-11 place-items-center rounded-full text-sub hover:bg-soft"
             aria-label="닫기"
           >
-            ✕
+            <X size={20} aria-hidden />
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">{children}</div>

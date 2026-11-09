@@ -8,14 +8,14 @@ export interface NavItem {
   end?: boolean;
 }
 
-/** 화면 아래에 떠 있는 알약 모양 메뉴. 선택된 메뉴는 옅은 회색 배경. */
+/** 화면 아래에 떠 있는 유리 알약 메뉴. 선택된 메뉴는 밝은 유리 렌즈. */
 export function BottomNav({ items }: { items: NavItem[] }) {
   return (
     <nav
       aria-label="주 메뉴"
       className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),12px)] pointer-events-none"
     >
-      <ul className="pointer-events-auto flex gap-1 rounded-full bg-white/90 p-1.5 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.25)] ring-1 ring-black/5 backdrop-blur-md">
+      <ul className="glass-thick pointer-events-auto flex gap-1 rounded-full p-1.5">
         {items.map((it) => (
           <li key={it.to}>
             <NavLink
@@ -23,7 +23,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
               end={it.end}
               className={({ isActive }) =>
                 `flex min-h-13 min-w-[58px] flex-col items-center justify-center rounded-full px-2.5 text-[11px] font-semibold transition ${
-                  isActive ? 'bg-brand-50 text-brand-700' : 'text-sub hover:text-ink'
+                  isActive ? 'glass-lens text-brand-700' : 'text-sub hover:text-ink'
                 }`
               }
             >

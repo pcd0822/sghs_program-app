@@ -106,7 +106,7 @@ export default function AttendancePage() {
         }
       />
 
-      <div className="grid grid-cols-3 rounded-full bg-white p-1 ring-1 ring-line lg:max-w-xl" role="tablist" aria-label="보기 방식">
+      <div className="glass grid grid-cols-3 rounded-full p-1 lg:max-w-xl" role="tablist" aria-label="보기 방식">
         {VIEWS.map(([k, label]) => (
           <button
             key={k}
@@ -127,7 +127,7 @@ export default function AttendancePage() {
             key={d}
             type="button"
             onClick={() => setDate(d)}
-            className={`min-h-9 shrink-0 rounded-full px-3 text-[13px] font-bold ${d === date ? 'bg-brand-600 text-white' : 'bg-white text-sub ring-1 ring-line'}`}
+            className={`min-h-9 shrink-0 rounded-full px-3 text-[13px] font-bold ${d === date ? 'bg-brand-600 text-white' : 'bg-white/60 text-sub ring-1 ring-white/80 hover:bg-white/85'}`}
           >
             {formatDate(d)}
           </button>

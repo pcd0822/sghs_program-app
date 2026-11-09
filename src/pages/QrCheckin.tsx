@@ -130,7 +130,7 @@ export default function QrCheckin() {
         {(['start', 'end'] as const).map((p) => {
           const at = p === 'start' ? start : end;
           return (
-            <div key={p} className={`rounded-3xl px-3 py-4 ring-1 ${at !== null ? 'bg-emerald-50 ring-emerald-200' : 'bg-white ring-line'}`}>
+            <div key={p} className={`rounded-3xl px-3 py-4 ring-1 ${at !== null ? 'bg-emerald-50 ring-emerald-200' : 'bg-white/70 ring-white'}`}>
               <p className="text-[14px] font-semibold text-sub">{phaseText(p)} QR</p>
               <p className={`mt-1 text-[22px] font-extrabold tabular-nums ${at !== null ? 'text-emerald-700' : 'text-zinc-300'}`}>{at !== null ? formatClock(at) : '아직'}</p>
             </div>

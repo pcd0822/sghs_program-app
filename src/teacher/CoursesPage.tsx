@@ -17,7 +17,7 @@ export default function CoursesPage() {
       <Eyebrow icon={Ticket} tone="violet">강좌</Eyebrow>
       <h1 className="text-[24px] font-extrabold tracking-tight">{me?.name ? `${me.name} 선생님, 안녕하세요` : '안녕하세요'}</h1>
 
-      <section className="mt-3 rounded-[28px] bg-gradient-to-br from-brand-50 via-white to-orange-50 p-4 ring-1 ring-line">
+      <section className="glass mt-3 rounded-[28px] bg-gradient-to-br from-brand-100/50 via-white/20 to-orange-100/40 p-4">
         <p className="flex items-center gap-1.5 text-[15px] font-bold"><BookOpenCheck size={18} className="text-brand-600" aria-hidden /> 내가 맡은 강좌 {myCourses.length}개</p>
         {myCourses.length === 0 ? (
           <p className="mt-1 text-[14px] text-sub">아직 배정된 강좌가 없어요. 배정은 관리자가 대시보드에서 해요.</p>
@@ -25,7 +25,7 @@ export default function CoursesPage() {
           <ul className="mt-2 grid gap-1.5 md:grid-cols-2">
             {myCourses.map((c) => (
               <li key={c.id}>
-                <button type="button" onClick={() => openCourse(c)} className="flex min-h-11 w-full items-center gap-2 rounded-2xl bg-white px-3 text-left text-[14px] shadow-sm ring-1 ring-line">
+                <button type="button" onClick={() => openCourse(c)} className="glass-lens flex min-h-11 w-full items-center gap-2 rounded-2xl px-3 text-left text-[14px]">
                   <span className="shrink-0 font-semibold text-sub">{formatDate(c.date)}</span>
                   <span className="flex-1 truncate font-bold">{c.name}</span>
                   <span className="shrink-0 text-[12px] text-sub">{timeRange(c)}</span>
@@ -47,7 +47,7 @@ export default function CoursesPage() {
               {list.every((c) => c.category === '필수') ? <Pill tone="purple">필수</Pill> : <Pill tone="blue">선택</Pill>}
               <span className="ml-auto text-[13px] text-sub">{list.length}개</span>
             </div>
-            <div className="mt-1">
+            <div className="glass mt-2 grid rounded-[28px] p-1.5 md:grid-cols-2">
               {list.map((c) => (
                 <CourseRow key={c.id} c={c} highlight={c.teacherIds?.includes(tid)} onOpen={openCourse} />
               ))}

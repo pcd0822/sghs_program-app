@@ -24,8 +24,7 @@ function Layout() {
   ];
   return (
     // 휴대폰은 한 줄 화면, 태블릿·PC(768px 이상)는 넓게 펼쳐 출석부를 표로 본다.
-    <div className="mx-auto min-h-dvh max-w-lg bg-white pb-28 md:max-w-6xl md:px-6">
-
+    <div className="mx-auto min-h-dvh max-w-lg pb-28 md:max-w-6xl md:px-6">
       <Outlet />
       <BottomNav items={nav} />
     </div>

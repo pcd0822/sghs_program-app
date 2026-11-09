@@ -1,4 +1,4 @@
-import { Backpack, CalendarClock, CalendarDays, ClipboardCheck, ClipboardList, LayoutDashboard, Menu, MessageCircle, Presentation, Save, ShieldAlert, Ticket, TriangleAlert, Undo2, Wrench } from 'lucide-react';
+import { Backpack, CalendarClock, ChevronLeft, CalendarDays, ClipboardCheck, ClipboardList, LayoutDashboard, Menu, MessageCircle, Presentation, Save, ShieldAlert, Ticket, TriangleAlert, Undo2, Wrench } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import { useSession } from '@/auth/AuthProvider';
@@ -85,7 +85,7 @@ function SaveBar() {
   return (
     <>
       <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),12px)] lg:left-[260px]">
-        <div className="mx-auto flex max-w-3xl items-center gap-2 rounded-full bg-ink py-2 pr-2 pl-5 text-white shadow-2xl">
+        <div className="mx-auto flex max-w-3xl items-center gap-2 rounded-full bg-ink/90 py-2 pr-2 pl-5 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl">
           <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-orange-400" aria-hidden />
           <span className="flex-1 text-[14px] font-semibold">저장하지 않은 변경 {dirty}건</span>
           <button type="button" onClick={() => setConfirmDiscard(true)} className="min-h-10 rounded-full px-3 text-[14px] font-semibold text-white/70 hover:text-white">
@@ -146,25 +146,25 @@ function Layout() {
   const leave = () => (dirty ? setLeaving(true) : nav('/t/profile'));
 
   return (
-    <div className="min-h-dvh bg-[#f7f7f9]">
+    <div className="min-h-dvh">
       {/* 컴퓨터: 왼쪽 메뉴 */}
-      <aside className="fixed inset-y-0 left-0 hidden w-[260px] flex-col border-r border-line bg-white p-4 lg:flex">
+      <aside className="fixed inset-y-0 left-0 hidden w-[260px] flex-col glass rounded-none p-4 lg:flex">
         <p className="flex items-center gap-2.5 px-3 pt-2 pb-4 text-[18px] font-extrabold">
           <IconTile icon={Wrench} size={30} /> <span className="text-gradient">관리자 대시보드</span>
         </p>
         <MenuList />
-        <button type="button" onClick={leave} className="mt-auto min-h-11 rounded-2xl px-3 text-left text-[14px] font-semibold text-sub hover:bg-soft">
-          ‹ 교사 화면으로
+        <button type="button" onClick={leave} className="mt-auto flex min-h-11 items-center gap-1 rounded-2xl px-3 text-left text-[14px] font-semibold text-sub hover:bg-white/60">
+          <ChevronLeft size={17} aria-hidden /> 교사 화면으로
         </button>
       </aside>
 
       {/* 휴대폰: 위쪽 막대 + 메뉴 창 */}
-      <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-white/90 px-3 pt-[max(env(safe-area-inset-top),8px)] pb-2 backdrop-blur lg:hidden">
-        <button type="button" onClick={leave} className="grid size-11 place-items-center rounded-full text-xl hover:bg-soft" aria-label="교사 화면으로">
-          ‹
+      <header className="glass-bar sticky top-0 z-30 flex items-center gap-2 px-3 pt-[max(env(safe-area-inset-top),8px)] pb-2 lg:hidden">
+        <button type="button" onClick={leave} className="grid size-11 place-items-center rounded-full hover:bg-white/60" aria-label="교사 화면으로">
+          <ChevronLeft size={22} aria-hidden />
         </button>
         <p className="flex flex-1 items-center gap-2 text-[16px] font-extrabold"><IconTile icon={Wrench} size={26} /> 관리자 대시보드</p>
-        <button type="button" onClick={() => setMenuOpen(true)} className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-soft px-4 text-[14px] font-bold">
+        <button type="button" onClick={() => setMenuOpen(true)} className="glass-lens inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[14px] font-bold">
           <Menu size={17} aria-hidden /> 메뉴
         </button>
       </header>
@@ -176,9 +176,9 @@ function Layout() {
         <div className="mx-auto max-w-6xl">
           {loading ? (
             <div className="space-y-3">
-              <div className="h-10 w-60 animate-pulse rounded-xl bg-white" />
-              <div className="h-40 animate-pulse rounded-3xl bg-white" />
-              <div className="h-72 animate-pulse rounded-3xl bg-white" />
+              <div className="h-10 w-60 animate-pulse rounded-xl bg-white/60" />
+              <div className="h-40 animate-pulse rounded-3xl bg-white/60" />
+              <div className="h-72 animate-pulse rounded-3xl bg-white/60" />
             </div>
           ) : (
             <Routes>

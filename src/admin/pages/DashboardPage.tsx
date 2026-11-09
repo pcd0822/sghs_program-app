@@ -1,4 +1,4 @@
-import { Calculator, LayoutDashboard, TriangleAlert } from 'lucide-react';
+import { Calculator, ChevronRight, LayoutDashboard, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { periodState, progress, requirements } from '@shared/rules';
@@ -104,8 +104,8 @@ export default function DashboardPage() {
               </li>
             ))}
           </ul>
-          <Link to="/admin/enrollments" className="mt-2 inline-block text-[14px] font-semibold text-brand-600">
-            수강신청 내역에서 수동 배정하기 ›
+          <Link to="/admin/enrollments" className="mt-2 inline-flex items-center gap-0.5 text-[14px] font-semibold text-brand-600">
+            수강신청 내역에서 수동 배정하기 <ChevronRight size={16} aria-hidden />
           </Link>
         </Card>
       )}

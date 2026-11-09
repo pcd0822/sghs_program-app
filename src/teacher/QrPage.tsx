@@ -1,4 +1,4 @@
-import { Download, Expand, QrCode, Radio, TimerOff } from 'lucide-react';
+import { ChevronLeft, Download, Expand, QrCode, Radio, TimerOff } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -107,9 +107,9 @@ export default function QrPage() {
   const canFullscreen = typeof document.documentElement.requestFullscreen === 'function';
 
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl bg-white px-5 pt-[max(env(safe-area-inset-top),16px)] pb-[max(env(safe-area-inset-bottom),24px)]">
+    <main className="mx-auto min-h-dvh max-w-3xl px-5 pt-[max(env(safe-area-inset-top),16px)] pb-[max(env(safe-area-inset-bottom),24px)]">
       <button type="button" onClick={() => nav(-1)} className="-ml-3 flex min-h-11 items-center gap-1 rounded-full px-3 text-[15px] font-semibold text-sub hover:bg-soft">
-        ‹ 뒤로
+        <ChevronLeft size={18} aria-hidden /> 뒤로
       </button>
       <h1 className="mt-1 text-[22px] leading-snug font-extrabold">{c?.name ?? '…'}</h1>
       {c && (
@@ -128,7 +128,7 @@ export default function QrPage() {
               role="tab"
               aria-selected={phase === p}
               onClick={() => setPhase(p)}
-              className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full text-[15px] font-bold transition ${phase === p ? 'bg-white shadow-sm' : 'text-sub'}`}
+              className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full text-[15px] font-bold transition ${phase === p ? 'glass-lens' : 'text-sub'}`}
             >
               {phaseLabel(p)} QR
               {!!o && o > now && <span className="size-2 rounded-full bg-emerald-500" aria-label="켜짐" />}
@@ -157,7 +157,7 @@ export default function QrPage() {
         {phaseLabel(phase)} 출석 QR {isOpen ? '끄기' : '켜기'}
       </Button>
 
-      <div ref={box} className="mt-4 flex flex-col items-center justify-center rounded-[28px] bg-white p-3 ring-1 ring-line [&:fullscreen]:rounded-none [&:fullscreen]:ring-0">
+      <div ref={box} className="mt-4 flex flex-col items-center justify-center rounded-[28px] bg-white p-3 shadow-[0_14px_34px_-18px_rgb(76_29_149/0.28)] ring-1 ring-white [&:fullscreen]:rounded-none [&:fullscreen]:ring-0">
         <p className="text-[20px] font-extrabold" style={{ color: phase === 'start' ? '#059669' : '#7c3aed' }}>
           {phaseLabel(phase)} 출석 QR
         </p>

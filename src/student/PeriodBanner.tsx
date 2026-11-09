@@ -18,20 +18,21 @@ export function PeriodBanner() {
   const { period, periodNow, now } = useStudent();
   if (period === undefined) return <div className="mt-3 h-12 animate-pulse rounded-2xl bg-soft" />;
 
-  const box = 'mt-3 flex items-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-semibold';
+  // 유리 판 위에 상태 색은 글자·아이콘으로만
+  const box = 'glass mt-3 flex items-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-semibold';
   switch (periodNow) {
     case 'unset':
-      return <div className={`${box} bg-soft text-sub`}><CalendarDays size={17} className="shrink-0" aria-hidden /> 수강신청 일정이 곧 안내될 예정이에요.</div>;
+      return <div className={`${box} text-sub`}><CalendarDays size={17} className="shrink-0" aria-hidden /> 수강신청 일정이 곧 안내될 예정이에요.</div>;
     case 'before':
       return (
-        <div className={`${box} bg-sky-50 text-sky-800`}>
+        <div className={`${box} text-sky-800`}>
           <AlarmClock size={17} className="shrink-0" aria-hidden /> <span className="flex-1">{formatDateTime(period!.openAt!)}에 열려요</span>
           <span className="tabular-nums">{countdown(period!.openAt! - now)}</span>
         </div>
       );
     case 'open':
       return (
-        <div className={`${box} bg-emerald-50 text-emerald-800`}>
+        <div className={`${box} text-emerald-800`}>
           <span className="relative flex size-2.5">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500" />
@@ -41,6 +42,6 @@ export function PeriodBanner() {
         </div>
       );
     case 'closed':
-      return <div className={`${box} bg-zinc-100 text-zinc-600`}><Lock size={17} className="shrink-0" aria-hidden /> <span>수강신청이 마감되었어요. 바꿔야 하면 담임 선생님께 말씀드려 주세요.</span></div>;
+      return <div className={`${box} text-zinc-600`}><Lock size={17} className="shrink-0" aria-hidden /> <span>수강신청이 마감되었어요. 바꿔야 하면 담임 선생님께 말씀드려 주세요.</span></div>;
   }
 }

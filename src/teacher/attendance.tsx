@@ -69,7 +69,7 @@ export function AttendCheck({ checked, pending, onLabel, offLabel, meta, onChang
         disabled={busy}
         onClick={() => onChange(!checked)}
         className={`flex min-h-11 min-w-[84px] items-center justify-center gap-1.5 rounded-full px-3 text-[14px] font-bold ring-1 transition active:scale-95 disabled:opacity-60 ${
-          shown ? 'bg-rose-50 text-rose-600 ring-rose-200' : 'bg-white text-emerald-700 ring-line'
+          shown ? 'bg-rose-50 text-rose-600 ring-rose-200' : 'bg-white/80 text-emerald-700 ring-white shadow-[0_1px_2px_rgb(17_17_20/0.06)]'
         }`}
       >
         <span className={`grid size-5 place-items-center rounded-md ${shown ? 'bg-rose-500 text-white' : 'ring-1 ring-zinc-300'}`} aria-hidden>

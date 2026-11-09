@@ -1,4 +1,4 @@
-import { Inbox, Lock, Megaphone, MessageCircle, Trash2 } from 'lucide-react';
+import { ChevronRight, Inbox, Lock, Megaphone, MessageCircle, Trash2 } from 'lucide-react';
 import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import type { Inquiry } from '@shared/types';
@@ -66,7 +66,7 @@ export default function BoardAdminPage() {
             key={k}
             type="button"
             onClick={() => setFilter(k)}
-            className={`min-h-9 rounded-full px-3 text-[13px] font-bold ${filter === k ? 'bg-ink text-white' : 'bg-white text-sub ring-1 ring-line'}`}
+            className={`min-h-9 rounded-full px-3 text-[13px] font-bold ${filter === k ? 'bg-ink text-white' : 'bg-white/60 text-sub ring-1 ring-white/80 hover:bg-white/85'}`}
           >
             {label}
           </button>
@@ -79,7 +79,7 @@ export default function BoardAdminPage() {
         ) : rows.length === 0 ? (
           <Empty icon={Inbox} tone="slate" text="해당하는 글이 없어요" />
         ) : (
-          <ul className="divide-y divide-line">
+          <ul className="divide-y divide-line rounded-2xl bg-white/40 px-3">
             {rows.map((x) => {
               const a = authors.get(x._id);
               return (
@@ -99,7 +99,7 @@ export default function BoardAdminPage() {
                       </span>
                       <span className="mt-1 block truncate font-bold">{x.title}</span>
                     </span>
-                    <span className="text-sub">›</span>
+                    <ChevronRight size={18} className="shrink-0 text-sub" aria-hidden />
                   </button>
                 </li>
               );

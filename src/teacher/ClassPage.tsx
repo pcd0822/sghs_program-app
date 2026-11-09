@@ -57,7 +57,7 @@ export default function ClassPage() {
         </div>
       )}
 
-      <div className="mt-3 grid grid-cols-2 rounded-full bg-soft p-1" role="tablist">
+      <div className="glass mt-3 grid grid-cols-2 rounded-full p-1" role="tablist">
         {(
           [
             ['att', ClipboardCheck, '출결'],
@@ -70,7 +70,7 @@ export default function ClassPage() {
             role="tab"
             aria-selected={tab === k}
             onClick={() => setTab(k)}
-            className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full text-[15px] font-bold transition ${tab === k ? 'bg-white shadow-sm' : 'text-sub'}`}
+            className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full text-[15px] font-bold transition ${tab === k ? 'glass-lens' : 'text-sub'}`}
           >
             <Icon size={17} aria-hidden />
             {label}
@@ -125,7 +125,7 @@ function AttendanceTab({
 
   return (
     <div>
-      <div className="sticky top-0 z-10 -mx-5 bg-white/90 px-5 pt-3 pb-2 backdrop-blur">
+      <div className="glass-bar sticky top-0 z-10 -mx-5 px-5 pt-3 pb-2 md:mx-0 md:mt-3 md:rounded-[24px] md:px-4">
         <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none] md:flex-wrap" role="tablist" aria-label="날짜 선택">
           {OPERATING_DATES.map((d) => (
             <button
@@ -148,7 +148,8 @@ function AttendanceTab({
       </div>
 
       {/* 넓은 화면: 한 줄에 한 학생, 칸을 나눈 표 */}
-      <table className="mt-1 hidden w-full border-separate border-spacing-0 text-left md:table">
+      <div className="glass mt-3 hidden overflow-hidden rounded-[28px] px-3 pb-2 md:block">
+      <table className="w-full border-separate border-spacing-0 text-left">
         <thead className="text-[13px] text-sub">
           <tr>
             <th className="w-14 border-b border-line py-2.5 pl-2 font-semibold">번호</th>
@@ -201,9 +202,10 @@ function AttendanceTab({
           })}
         </tbody>
       </table>
+      </div>
 
       {/* 휴대폰: 한 학생씩 쌓은 목록 */}
-      <ul className="divide-y divide-line md:hidden">
+      <ul className="glass mt-3 divide-y divide-line rounded-[28px] px-4 md:hidden">
         {students.map((s) => {
           const todays = Object.values(appBySid.get(s.sid)?.items ?? {}).filter((it) => it.date === date);
           const phone = phoneBySid.get(s.sid);
@@ -267,7 +269,7 @@ function StatusTab({ students, appBySid }: { students: Student[]; appBySid: Map<
         <table className="w-max min-w-full border-separate border-spacing-0 text-left text-[13px]">
           <thead>
             <tr className="text-[12px] text-sub">
-              <th className="sticky left-0 z-[1] border-b border-line bg-white py-2 pr-3 font-semibold">번호·이름</th>
+              <th className="sticky left-0 z-[1] border-b border-line bg-[#fbfafd] py-2 pr-3 font-semibold">번호·이름</th>
               <th className="border-b border-line px-2 py-2 font-semibold">제출</th>
               {dates.map((d) => (
                 <th key={d} className="border-b border-line px-2 py-2 font-semibold whitespace-nowrap">
@@ -282,7 +284,7 @@ function StatusTab({ students, appBySid }: { students: Student[]; appBySid: Map<
               const items = Object.values(app?.items ?? {});
               return (
                 <tr key={s.sid} className={app?.submitted ? '' : 'bg-orange-50/40'}>
-                  <td className="sticky left-0 z-[1] border-b border-line bg-white py-2 pr-3 font-bold whitespace-nowrap">
+                  <td className="sticky left-0 z-[1] border-b border-line bg-[#fbfafd] py-2 pr-3 font-bold whitespace-nowrap">
                     <span className="mr-1 text-sub tabular-nums">{s.number}</span>
                     {s.name}
                   </td>

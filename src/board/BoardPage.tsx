@@ -1,5 +1,5 @@
-import { Hourglass, Lock, Megaphone, MessageCircle, MessageCircleReply, PenLine } from 'lucide-react';
-import { Eyebrow } from '@/ui/Glyph';
+import { ChevronRight, Hourglass, Lock, Megaphone, MessageCircle, MessageCircleReply, PenLine } from 'lucide-react';
+import { EmptyArt, Eyebrow } from '@/ui/Glyph';
 // 문의하기(학생): [공지]는 맨 위 고정·색 구분, 공개 글은 모두, 비밀글은 내 글만 보인다.
 
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
@@ -59,7 +59,7 @@ export default function BoardPage() {
           <ul className="mt-4 space-y-2">
             {notices.map((n) => (
               <li key={n._id}>
-                <button type="button" onClick={() => setOpen(n._id)} className="w-full rounded-2xl bg-gradient-to-r from-brand-50 to-orange-50 p-3.5 text-left ring-1 ring-brand-100 active:scale-[0.99]">
+                <button type="button" onClick={() => setOpen(n._id)} className="glass w-full rounded-2xl bg-gradient-to-r from-brand-100/50 to-orange-100/40 p-3.5 text-left active:scale-[0.99]">
                   <span className="flex items-center gap-1.5">
                     <Pill tone="purple"><Megaphone size={12} aria-hidden /> 공지</Pill>
                     <span className="text-[12px] text-sub">{formatDateTime(n.createdAt)}</span>
@@ -77,9 +77,12 @@ export default function BoardPage() {
             </label>
           </div>
           {posts.length === 0 ? (
-            <p className="mt-6 text-center text-sub">아직 글이 없어요. 궁금한 점을 물어보세요!</p>
+            <div className="glass mt-3 rounded-[28px] px-4 py-10 text-center">
+              <EmptyArt icon={MessageCircle} tone="sky" />
+              <p className="mt-3 font-semibold text-sub">아직 글이 없어요. 궁금한 점을 물어보세요!</p>
+            </div>
           ) : (
-            <ul className="mt-1 divide-y divide-line">
+            <ul className="glass mt-3 divide-y divide-line rounded-[28px] px-4">
               {posts.map((p) => (
                 <li key={p._id}>
                   <button type="button" onClick={() => setOpen(p._id)} className="flex w-full items-center gap-3 py-3 text-left">
@@ -94,9 +97,7 @@ export default function BoardPage() {
                         {p.authorMasked} · {formatDateTime(p.createdAt)}
                       </span>
                     </span>
-                    <span className="text-sub" aria-hidden>
-                      ›
-                    </span>
+                    <ChevronRight size={18} className="shrink-0 text-sub" aria-hidden />
                   </button>
                 </li>
               ))}

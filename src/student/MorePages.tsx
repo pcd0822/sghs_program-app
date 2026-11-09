@@ -58,13 +58,13 @@ export function StudentProfilePage() {
         {sid} · {me ? `${me.classNo}반 ${me.number}번` : ''}
       </p>
 
-      <section className="mt-6 rounded-3xl p-4 ring-1 ring-line">
+      <section className="glass mt-6 rounded-[28px] p-4">
         <h2 className="mb-3 text-[15px] font-bold">프로필 사진</h2>
         <PhotoEditor url={me?.photoUrl} name={me?.name ?? ''} />
         <p className="mt-3 text-[13px] text-sub">선생님 출석부에 보여요. 얼굴이 잘 보이는 사진이면 좋아요.</p>
       </section>
 
-      <section className="mt-4 rounded-3xl p-4 ring-1 ring-line">
+      <section className="glass mt-4 rounded-[28px] p-4">
         <h2 className="text-[15px] font-bold">연락처</h2>
         <p className="mt-0.5 text-[13px] text-sub">로그인할 때 쓰는 연락처예요. 바꾸면 다음 로그인부터 새 번호를 입력해야 해요.</p>
         <div className="mt-3 flex gap-2">
@@ -74,7 +74,7 @@ export function StudentProfilePage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             aria-label="연락처"
-            className="h-12 min-w-0 flex-1 rounded-2xl border border-line bg-soft px-4 text-[17px] tabular-nums outline-none focus:border-brand-500 focus:bg-white"
+            className="h-12 min-w-0 flex-1 rounded-2xl border border-line bg-white/60 px-4 text-[17px] tabular-nums outline-none focus:border-brand-500 focus:bg-white"
           />
           <button
             type="button"

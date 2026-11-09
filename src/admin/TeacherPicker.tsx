@@ -1,5 +1,6 @@
 // 담당교사 고르기: 이름을 입력하면 입력값과 일치하는 교사만 아래에 나오고, 입력이 바뀌면 목록도 바뀐다. 여러 명 고를 수 있다.
 
+import { X } from 'lucide-react';
 import { useId, useState } from 'react';
 import type { TeacherRow } from './AdminData';
 
@@ -37,7 +38,7 @@ export function TeacherPicker({ teachers, value, onChange }: Props) {
               className="grid size-7 place-items-center rounded-full hover:bg-brand-100"
               aria-label={`${byId.get(id)?.name ?? ''} 빼기`}
             >
-              ✕
+              <X size={15} aria-hidden />
             </button>
           </span>
         ))}
@@ -66,10 +67,10 @@ export function TeacherPicker({ teachers, value, onChange }: Props) {
               pick(matches[active].id);
             } else if (e.key === 'Escape') setOpen(false);
           }}
-          className="block h-11 w-full rounded-xl border border-line bg-soft px-3 text-[15px] outline-none focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100"
+          className="block h-11 w-full rounded-xl border border-line bg-white/60 px-3 text-[15px] outline-none focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100"
         />
         {open && (
-          <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-2xl bg-white p-1 shadow-xl ring-1 ring-line">
+          <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-10 mt-1 max-h-56 overflow-y-auto glass-thick rounded-2xl p-1">
             {matches.length === 0 ? (
               <li className="px-3 py-2 text-[14px] text-sub">일치하는 교사가 없어요</li>
             ) : (

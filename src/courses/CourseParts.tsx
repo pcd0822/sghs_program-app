@@ -1,4 +1,4 @@
-import { Flame, Sprout, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { Check, Flame, Sprout, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { IconTile, type GlyphTone } from '@/ui/Glyph';
 // 강좌 목록·상세·Top 5. 학생과 교사 화면이 함께 쓴다(교사는 신청 버튼 없이).
 
@@ -43,13 +43,13 @@ export function CourseRow({ c, applied, highlight, onOpen }: RowProps) {
     <button
       type="button"
       onClick={() => onOpen(c)}
-      className={`flex w-full gap-3.5 rounded-3xl px-2 py-3 text-left transition hover:bg-soft active:scale-[0.99] ${highlight ? 'bg-brand-50/60 ring-1 ring-brand-100' : ''}`}
+      className={`flex w-full gap-3.5 rounded-[22px] px-2 py-2.5 text-left transition hover:bg-white/60 active:scale-[0.99] ${highlight ? 'bg-brand-100/50 ring-1 ring-brand-200/70' : ''}`}
     >
       <div className="relative shrink-0 pb-2">
         <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className={`size-[76px] rounded-2xl ${full && !applied ? 'opacity-50 grayscale' : ''}`} />
         <div className="absolute inset-x-0 bottom-0 flex justify-center">
           {applied ? (
-            <Pill tone="green" className="shadow-sm ring-white">✓ 신청</Pill>
+            <Pill tone="green" className="shadow-sm ring-white"><Check size={12} strokeWidth={3} aria-hidden /> 신청</Pill>
           ) : full ? (
             <Pill tone="gray" className="bg-white shadow-sm">마감</Pill>
           ) : r !== null && r <= 5 ? (
@@ -105,25 +105,25 @@ function TopStrip({ icon, tone, title, list, empty, onOpen, hot }: { icon: Lucid
     <section>
       <h2 className="flex items-center gap-2 px-1 text-[17px] font-extrabold"><IconTile icon={icon} tone={tone} size={28} />{title}</h2>
       {list.length === 0 ? (
-        <p className="mt-2 rounded-2xl bg-soft px-4 py-3 text-sm text-sub">{empty}</p>
+        <p className="glass mt-2 rounded-2xl px-4 py-3 text-sm text-sub">{empty}</p>
       ) : (
-        <ol className="-mx-5 mt-2 flex snap-x gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+        <ol className="-mx-5 mt-2 flex snap-x scroll-px-5 gap-3 overflow-x-auto px-5 pt-1 pb-3 [scrollbar-width:none]">
           {list.map((c, i) => (
             <li key={c.id} className="w-[148px] shrink-0 snap-start">
-              <button type="button" onClick={() => onOpen(c)} className="w-full text-left active:scale-[0.98]">
+              <button type="button" onClick={() => onOpen(c)} className="glass w-full rounded-[24px] p-2 text-left active:scale-[0.98]">
                 <div className="relative">
-                  <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="aspect-square w-full rounded-2xl" />
-                  <span className="absolute top-2 left-2 grid size-7 place-items-center rounded-full bg-white/90 text-[13px] font-extrabold shadow-sm">{i + 1}</span>
+                  <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="aspect-square w-full rounded-[18px]" />
+                  <span className="glass-lens absolute top-2 left-2 grid size-7 place-items-center rounded-full text-[13px] font-extrabold">{i + 1}</span>
                 </div>
-                <p className="mt-1.5 line-clamp-1 text-[14px] font-bold">{c.name}</p>
-                <p className="text-[12px] text-sub">{formatDate(c.date)}</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-soft">
+                <p className="mt-1.5 line-clamp-1 px-0.5 text-[14px] font-bold">{c.name}</p>
+                <p className="px-0.5 text-[12px] text-sub">{formatDate(c.date)}</p>
+                <div className="mx-0.5 mt-1 h-1.5 overflow-hidden rounded-full bg-ink/8">
                   <div
                     className={`h-full rounded-full ${hot ? 'bg-gradient-to-r from-coral-400 to-coral-500' : 'bg-emerald-400'}`}
                     style={{ width: `${Math.min(100, Math.round(fillRatio(c) * 100))}%` }}
                   />
                 </div>
-                <p className="mt-0.5 text-[12px] font-semibold text-sub">
+                <p className="mt-0.5 px-0.5 text-[12px] font-semibold text-sub">
                   {c.count}/{c.capacity}명 · {seatsText(c)}
                 </p>
               </button>
@@ -157,7 +157,7 @@ export function CourseDetailSheet({ c, onClose, footer, notice }: DetailProps) {
           </div>
           <h3 className="mt-2 text-[22px] leading-snug font-extrabold">{c.name}</h3>
           {c.intro && <p className="mt-2 text-[15px] leading-relaxed text-[#45454f]">{c.intro}</p>}
-          <dl className="mt-4 space-y-2.5 rounded-3xl bg-soft p-4 text-[15px]">
+          <dl className="mt-4 space-y-2.5 rounded-3xl bg-white/70 p-4 text-[15px] ring-1 ring-white">
             <Info icon={<CalendarIcon />} label="날짜·시간">
               {formatDate(c.date)} {timeRange(c)}
             </Info>
@@ -198,7 +198,7 @@ function Capacity({ c }: { c: Course }) {
         <span className="text-[15px] font-bold">정원 현황</span>
         <span className={`text-[15px] font-extrabold ${full ? 'text-zinc-400' : 'text-emerald-600'}`}>{seatsText(c)}</span>
       </div>
-      <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-soft">
+      <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-ink/8">
         <div className={`h-full rounded-full transition-all ${full ? 'bg-zinc-300' : 'bg-gradient-to-r from-brand-500 to-coral-500'}`} style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-1 text-[13px] text-sub">

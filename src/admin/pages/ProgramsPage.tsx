@@ -51,7 +51,7 @@ export default function ProgramsPage() {
               key={d}
               type="button"
               onClick={() => setDate(d)}
-              className={`min-h-9 shrink-0 rounded-full px-3 text-[13px] font-bold ${date === d ? 'bg-ink text-white' : 'bg-white text-sub ring-1 ring-line'}`}
+              className={`min-h-9 shrink-0 rounded-full px-3 text-[13px] font-bold ${date === d ? 'bg-ink text-white' : 'bg-white/60 text-sub ring-1 ring-white/80 hover:bg-white/85'}`}
             >
               {d === 'all' ? '전체' : formatDate(d)}
             </button>
@@ -141,7 +141,7 @@ export default function ProgramsPage() {
               const n = enrolled(a, c);
               return (
                 <li key={c.id}>
-                  <button type="button" onClick={() => open(c)} className="flex w-full gap-3 rounded-3xl bg-white p-3 text-left ring-1 ring-line active:scale-[0.99]">
+                  <button type="button" onClick={() => open(c)} className="glass flex w-full gap-3 rounded-3xl p-3 text-left active:scale-[0.99]">
                     <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="size-16 shrink-0 rounded-2xl" />
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1 text-[12px] text-sub">

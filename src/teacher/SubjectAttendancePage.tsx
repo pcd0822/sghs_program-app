@@ -1,4 +1,4 @@
-import { BookOpenCheck, Inbox, QrCode } from 'lucide-react';
+import { BookOpenCheck, ChevronLeft, ChevronRight, Inbox, QrCode } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { call } from '@/lib/call';
@@ -57,7 +57,7 @@ export default function SubjectAttendancePage() {
               <button
                 type="button"
                 onClick={() => setParams({ c: c.id })}
-                className="flex w-full items-center gap-3 rounded-3xl p-3 text-left ring-1 ring-line transition hover:bg-soft active:scale-[0.99]"
+                className="glass flex w-full items-center gap-3 rounded-3xl p-3 text-left transition hover:bg-white/75 active:scale-[0.99]"
               >
                 <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="size-14 rounded-2xl" />
                 <span className="min-w-0 flex-1">
@@ -69,9 +69,7 @@ export default function SubjectAttendancePage() {
                     <PinIcon /> {c.place}
                   </span>
                 </span>
-                <span className="text-sub" aria-hidden>
-                  ›
-                </span>
+                <ChevronRight size={18} className="shrink-0 text-sub" aria-hidden />
               </button>
             </li>
           ))}
@@ -119,7 +117,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
       <button type="button" onClick={onBack} className="-ml-3 flex min-h-11 items-center gap-1 rounded-full px-3 text-[15px] font-semibold text-sub hover:bg-soft">
-        ‹ 강좌 목록
+        <ChevronLeft size={18} aria-hidden /> 강좌 목록
       </button>
       <h1 className="mt-1 text-[22px] leading-snug font-extrabold">{c.name}</h1>
       <p className="mt-0.5 text-[14px] text-sub">
@@ -133,7 +131,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
         <QrCode size={18} aria-hidden /> 출석 QR 띄우기
       </button>
 
-      <div className="sticky top-0 z-10 -mx-5 mt-3 flex flex-wrap gap-2 bg-white/90 px-5 py-2 backdrop-blur">
+      <div className="glass-bar sticky top-0 z-10 -mx-5 mt-3 flex flex-wrap gap-2 px-5 py-2 md:mx-0 md:rounded-[24px] md:px-4">
         <span className="rounded-full bg-soft px-3 py-1.5 text-[14px] font-bold">수강생 {list.length}명</span>
         <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[14px] font-bold text-emerald-700">출석 {list.length - absentCount}</span>
         <span className="rounded-full bg-rose-50 px-3 py-1.5 text-[14px] font-bold text-rose-600">결과 {absentCount}</span>
@@ -161,7 +159,8 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
       ) : (
         <>
         {/* 넓은 화면: 칸을 나눈 표 */}
-        <table className="mt-2 hidden w-full border-separate border-spacing-0 text-left md:table">
+        <div className="glass mt-3 hidden overflow-hidden rounded-[28px] px-3 pb-2 md:block">
+        <table className="w-full border-separate border-spacing-0 text-left">
           <thead className="text-[13px] text-sub">
             <tr>
               <th className="w-24 border-b border-line py-2.5 pl-2 font-semibold">학번</th>
@@ -197,8 +196,9 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
             })}
           </tbody>
         </table>
+        </div>
         {/* 휴대폰: 한 학생씩 쌓은 목록 */}
-        <ul className="mt-2 divide-y divide-line md:hidden">
+        <ul className="glass mt-3 divide-y divide-line rounded-[28px] px-4 md:hidden">
           {list.map((s) => (
             <li key={s.sid} className="flex items-center gap-3 py-2.5">
               <Avatar url={s.photoUrl} name={s.name} size={44} />

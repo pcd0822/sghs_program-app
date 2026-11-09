@@ -1,4 +1,4 @@
-import { Backpack, KeyRound, type LucideIcon } from 'lucide-react';
+import { Backpack, ChevronLeft, KeyRound, type LucideIcon } from 'lucide-react';
 import { useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
@@ -13,13 +13,13 @@ function Shell({ icon, tone, title, desc, children }: { icon: LucideIcon; tone: 
       <button
         type="button"
         onClick={() => nav('/')}
-        className="-ml-3 grid size-11 place-items-center rounded-full text-2xl hover:bg-soft"
+        className="-ml-3 grid size-11 place-items-center rounded-full hover:bg-white/60"
         aria-label="처음 화면으로"
       >
-        ‹
+        <ChevronLeft size={24} aria-hidden />
       </button>
       <IconTile icon={icon} tone={tone} size={56} className="mt-6" />
-      <h1 className="mt-4text-[28px] font-extrabold tracking-tight">{title}</h1>
+      <h1 className="mt-4 text-[28px] font-extrabold tracking-tight">{title}</h1>
       <p className="mt-1 text-[15px] text-sub">{desc}</p>
       {children}
     </main>
@@ -32,7 +32,7 @@ function Field({ label, hint, ...rest }: InputHTMLAttributes<HTMLInputElement> &
       <span className="text-sm font-semibold text-sub">{label}</span>
       <input
         {...rest}
-        className="mt-1.5 block h-14 w-full rounded-2xl border border-line bg-soft px-4 text-[17px] outline-none transition placeholder:text-[#b3b3bd] focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100"
+        className="mt-1.5 block h-14 w-full rounded-2xl border border-white/80 bg-white/60 px-4 text-[17px] shadow-[inset_0_1px_2px_rgb(17_17_20/0.04)] outline-none backdrop-blur-md transition placeholder:text-[#a5a5b0] focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100"
       />
       {hint && <span className="mt-1 block text-[13px] text-sub">{hint}</span>}
     </label>
@@ -139,7 +139,7 @@ export function TeacherLogin() {
               <div
                 key={i}
                 className={`grid h-18 place-items-center rounded-2xl border text-3xl font-bold transition ${
-                  i === code.length ? 'border-brand-500 bg-white ring-4 ring-brand-100' : 'border-line bg-soft'
+                  i === code.length ? 'border-brand-500 bg-white ring-4 ring-brand-100' : 'border-white/80 bg-white/60 backdrop-blur-md'
                 }`}
               >
                 {code[i] ? '●' : ''}

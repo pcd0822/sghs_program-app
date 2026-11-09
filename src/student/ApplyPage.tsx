@@ -1,6 +1,6 @@
-import { CircleCheck, ClipboardList, Ticket } from 'lucide-react';
+import { Check, ChevronRight, CircleCheck, ClipboardList, Ticket } from 'lucide-react';
 import { Eyebrow } from '@/ui/Glyph';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { Course } from '@shared/types';
 import { CourseRow, CourseRowSkeleton, TopLists } from '@/courses/CourseParts';
@@ -24,6 +24,17 @@ export default function ApplyPage() {
   for (const c of courses ?? []) byDate.set(c.date, [...(byDate.get(c.date) ?? []), c]);
   const count = Object.keys(items).length;
 
+  // 떠 있는 "내 신청" 버튼은 위쪽 목록 버튼이 화면 밖으로 나갔을 때만 보인다(겹쳐 보이지 않게).
+  const listBtn = useRef<HTMLButtonElement>(null);
+  const [showFloat, setShowFloat] = useState(false);
+  useEffect(() => {
+    const el = listBtn.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return setShowFloat(true);
+    const io = new IntersectionObserver(([e]) => setShowFloat(!e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <main className="px-5 pt-[max(env(safe-area-inset-top),16px)]">
       <header className="flex items-center justify-between pt-2">
@@ -36,7 +47,7 @@ export default function ApplyPage() {
       <PeriodBanner />
 
       {/* 내 진행 상황 */}
-      <section className="mt-3 rounded-[28px] bg-gradient-to-br from-brand-50 via-white to-orange-50 p-4 ring-1 ring-line">
+      <section className="glass mt-3 rounded-[28px] bg-gradient-to-br from-brand-100/50 via-white/20 to-orange-100/40 p-4">
         <div className="flex flex-wrap items-center gap-1.5">
           {prog ? (
             <>
@@ -62,13 +73,14 @@ export default function ApplyPage() {
                 : `필수 강좌 전부와 날짜마다 선택 강좌 1개씩 골라 주세요.`}
         </p>
         <button
+          ref={listBtn}
           type="button"
           onClick={openMyList}
-          className="mt-3 flex min-h-12 w-full items-center justify-between rounded-2xl bg-white px-4 text-[15px] font-bold shadow-sm ring-1 ring-line active:scale-[0.99]"
+          className="glass-lens mt-3 flex min-h-12 w-full items-center justify-between rounded-2xl px-4 text-[15px] font-bold active:scale-[0.99]"
         >
           <span className="flex items-center gap-2"><ClipboardList size={18} className="text-brand-600" aria-hidden /> 내 신청 목록</span>
-          <span className="text-brand-600">
-            {count}개 <span aria-hidden>›</span>
+          <span className="flex items-center gap-0.5 text-brand-600">
+            {count}개 <ChevronRight size={18} aria-hidden />
           </span>
         </button>
       </section>
@@ -94,9 +106,9 @@ export default function ApplyPage() {
               <div className="flex items-center gap-2 px-1">
                 <h2 className="text-[19px] font-extrabold">{formatDate(date)}</h2>
                 {required ? <Pill tone="purple">필수</Pill> : <Pill tone="blue">선택 1개</Pill>}
-                <span className={`ml-auto text-[13px] font-semibold ${done ? 'text-emerald-600' : 'text-orange-600'}`}>{done ? '✓ 신청함' : '미신청'}</span>
+                <span className={`ml-auto text-[13px] font-semibold ${done ? 'text-emerald-600' : 'text-orange-600'}`}>{done ? <><Check size={14} strokeWidth={3} className="-mt-0.5 mr-0.5 inline" aria-hidden />신청함</> : '미신청'}</span>
               </div>
-              <div className="mt-1">
+              <div className="glass mt-2 rounded-[28px] p-1.5">
                 {list.map((c) => (
                   <CourseRow key={c.id} c={c} applied={!!items[c.id]} onOpen={openCourse} />
                 ))}
@@ -110,7 +122,9 @@ export default function ApplyPage() {
       <button
         type="button"
         onClick={openMyList}
-        className="fixed right-[max(16px,calc(50vw-256px+16px))] bottom-[calc(max(env(safe-area-inset-bottom),12px)+76px)] z-30 flex min-h-12 items-center gap-1.5 rounded-full bg-ink px-4 text-[14px] font-bold text-white shadow-lg active:scale-95"
+        aria-hidden={!showFloat}
+        tabIndex={showFloat ? 0 : -1}
+        className={`fixed right-[max(16px,calc(50vw-256px+16px))] bottom-[calc(max(env(safe-area-inset-bottom),12px)+80px)] z-30 flex min-h-12 items-center gap-1.5 rounded-full bg-ink/90 px-4 text-[14px] font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_12px_28px_-10px_rgb(17_17_20/0.6)] ring-1 ring-white/10 backdrop-blur-xl transition duration-300 active:scale-95 ${showFloat ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
       >
         <ClipboardList size={17} aria-hidden /> 내 신청 <span className="rounded-full bg-white/20 px-1.5">{count}</span>
       </button>

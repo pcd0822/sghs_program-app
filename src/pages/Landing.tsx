@@ -10,17 +10,16 @@ export default function Landing() {
   const [choose, setChoose] = useState(false);
 
   return (
-    <main className="relative mx-auto flex min-h-dvh max-w-lg flex-col overflow-hidden bg-white">
+    <main className="relative mx-auto flex min-h-dvh max-w-lg flex-col overflow-hidden">
       {/* 파스텔 배경 */}
       <div
-        className="absolute inset-x-0 top-0 h-[68%]"
+        className="absolute inset-x-0 top-0 h-[72%] [mask-image:linear-gradient(to_bottom,black_55%,transparent)]"
         style={{
           background:
             'radial-gradient(120% 70% at 0% 0%, #fbcfe8 0%, transparent 60%), radial-gradient(90% 70% at 100% 10%, #bae6fd 0%, transparent 60%), radial-gradient(80% 60% at 50% 60%, #fde68a88 0%, transparent 70%)',
         }}
         aria-hidden
       />
-      <div className="absolute inset-x-0 top-[48%] h-[22%] bg-gradient-to-b from-transparent to-white" aria-hidden />
 
       {/* 그림 타일과 도형이 불규칙하게 나타났다 사라지는 자리 */}
       <div className="relative h-[54dvh] min-h-[320px]">
@@ -54,7 +53,7 @@ export default function Landing() {
 
 function ChoiceLink({ to, icon, tone, title, desc }: { to: string; icon: LucideIcon; tone: GlyphTone; title: string; desc: string }) {
   return (
-    <Link to={to} className="flex min-h-18 items-center gap-4 rounded-3xl bg-soft px-5 py-4 transition hover:bg-line active:scale-[0.99]">
+    <Link to={to} className="glass flex min-h-18 items-center gap-4 rounded-3xl px-5 py-4 transition hover:bg-white/80 active:scale-[0.99]">
       <IconTile icon={icon} tone={tone} size={48} />
       <span className="flex-1">
         <span className="block text-[17px] font-bold">{title}</span>

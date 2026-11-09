@@ -1,6 +1,6 @@
 // 주차별 시간표: 교시가 아닌 시간 블록. 학생·교사 화면이 함께 쓴다.
 
-import { BookOpen, Clapperboard, Compass, FileText, FolderOpen, Leaf, Megaphone, School, Sparkles, Utensils, type LucideIcon } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, Clapperboard, Compass, FileText, FolderOpen, Leaf, Megaphone, School, Sparkles, Utensils, type LucideIcon } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { TIME_ZONE } from '@shared/constants';
 import { groupWeeks } from '@shared/timetable';
@@ -27,9 +27,9 @@ export interface Block {
 }
 
 const toneClass: Record<BlockTone, string> = {
-  fixed: 'bg-zinc-50 ring-zinc-200 text-ink',
-  mine: 'bg-gradient-to-br from-brand-50 to-orange-50 ring-brand-100 text-ink',
-  course: 'bg-white ring-line text-ink',
+  fixed: 'bg-white/45 ring-white/80 text-ink',
+  mine: 'bg-gradient-to-br from-brand-100/80 to-orange-100/70 ring-brand-200/60 text-ink',
+  course: 'bg-white/75 ring-white text-ink',
   missing: 'border-2 border-dashed border-orange-300 bg-orange-50/40 ring-transparent text-orange-700',
 };
 
@@ -63,16 +63,16 @@ export function WeekView({ blocksFor, extrasFor, notes, dates }: Props) {
 
   return (
     <div className="@container">
-      <div className="sticky top-0 z-20 -mx-5 flex items-center justify-between bg-white/90 px-5 py-2 backdrop-blur">
-        <button type="button" onClick={() => setWeek((x) => x - 1)} className="grid size-11 place-items-center rounded-full text-2xl hover:bg-soft" aria-label="이전 주">
-          ‹
+      <div className="glass-bar sticky top-0 z-20 -mx-5 flex items-center justify-between px-5 py-2 @3xl:mx-0 @3xl:rounded-[24px]">
+        <button type="button" onClick={() => setWeek((x) => x - 1)} className="grid size-11 place-items-center rounded-full hover:bg-white/70" aria-label="이전 주">
+          <ChevronLeft size={22} aria-hidden />
         </button>
         <div className="text-center">
           <p className="text-[17px] font-extrabold">{w ? w.label : '다른 주'}</p>
           <p className="text-[12px] text-sub">{w ? `${formatDate(w.dates[0])} ~ ${formatDate(w.dates[w.dates.length - 1])}` : ' '}</p>
         </div>
-        <button type="button" onClick={() => setWeek((x) => x + 1)} className="grid size-11 place-items-center rounded-full text-2xl hover:bg-soft" aria-label="다음 주">
-          ›
+        <button type="button" onClick={() => setWeek((x) => x + 1)} className="grid size-11 place-items-center rounded-full hover:bg-white/70" aria-label="다음 주">
+          <ChevronRight size={22} aria-hidden />
         </button>
       </div>
 
@@ -98,13 +98,13 @@ export function WeekView({ blocksFor, extrasFor, notes, dates }: Props) {
 function DayCard({ date, blocks, extras, notes, today }: { date: string; blocks: Block[]; extras?: ReactNode; notes: DayNote[]; today: boolean }) {
   const sorted = [...blocks].sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
   return (
-    <section className={`rounded-[28px] p-4 ring-1 ${today ? 'bg-brand-50/40 ring-brand-100' : 'bg-white ring-line'}`}>
+    <section className={`glass rounded-[28px] p-4 ${today ? 'bg-brand-100/45' : ''}`}>
       <div className="flex items-center gap-2">
         <h2 className="text-[18px] font-extrabold">{formatDate(date)}</h2>
         {today && <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white">오늘</span>}
       </div>
       {notes.map((n) => (
-        <p key={n.id} className="mt-1.5 flex gap-1.5 rounded-xl bg-sky-50 px-3 py-2 text-[13px] font-medium text-sky-800">
+        <p key={n.id} className="mt-1.5 flex gap-1.5 rounded-xl bg-sky-100/60 px-3 py-2 text-[13px] font-medium text-sky-900">
           <Megaphone size={15} className="mt-0.5 shrink-0" aria-hidden />
           {n.text}
         </p>
@@ -147,7 +147,7 @@ export function FixedEventSheet({ ev, onClose }: { ev: FixedEvent | null; onClos
         <div className="pb-4">
           <GraphicCover icon={eventIcon(ev.title)} from="#a5b4fc" to="#38bdf8" seed={ev.title} className="aspect-[4/3] w-full rounded-[28px]" />
           <h3 className="mt-4 text-[22px] font-extrabold">{ev.title}</h3>
-          <dl className="mt-3 space-y-2.5 rounded-3xl bg-soft p-4 text-[15px]">
+          <dl className="mt-3 space-y-2.5 rounded-3xl bg-white/70 p-4 text-[15px] ring-1 ring-white">
             <div className="flex items-center gap-2">
               <CalendarIcon />
               <dt className="w-16 text-sub">날짜·시간</dt>

@@ -27,7 +27,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={i.id}
             role={i.kind === 'error' ? 'alert' : 'status'}
             className={`animate-fade-in flex max-w-sm items-center gap-2 rounded-full px-4 py-2.5 text-[15px] font-medium shadow-lg ${
-              i.kind === 'error' ? 'bg-rose-600 text-white' : i.kind === 'success' ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-line'
+              i.kind === 'error' ? 'bg-rose-600 text-white' : i.kind === 'success' ? 'bg-ink text-white' : 'glass-thick text-ink'
             }`}
           >
             {i.kind === 'success' && <CircleCheck size={18} className="shrink-0 text-emerald-400" aria-hidden />}

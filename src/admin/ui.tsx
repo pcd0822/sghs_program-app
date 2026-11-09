@@ -20,7 +20,7 @@ export function PageHead({ icon, tone = 'violet', title, desc, actions }: { icon
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-3xl bg-white p-4 ring-1 ring-line lg:p-5 ${className}`}>{children}</section>;
+  return <section className={`glass rounded-[28px] p-4 lg:p-5 ${className}`}>{children}</section>;
 }
 
 export function SmallButton({
@@ -47,7 +47,7 @@ export function SmallButton({
 }
 
 const inputCls =
-  'mt-1 block h-11 w-full rounded-xl border border-line bg-soft px-3 text-[15px] outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100 disabled:opacity-50';
+  'mt-1 block h-11 w-full rounded-xl border border-line bg-white/60 px-3 text-[15px] outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100 disabled:opacity-50';
 
 export function Field({ label, hint, className = '', ...rest }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
   return (
@@ -134,7 +134,7 @@ export function SearchBox({ className = '', ...rest }: InputHTMLAttributes<HTMLI
   return (
     <span className={`relative inline-flex w-full sm:w-64 ${className}`}>
       <Search className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sub" size={17} aria-hidden />
-      <input type="search" {...rest} className="h-10 w-full rounded-full border border-line bg-white pr-4 pl-10 text-[14px] outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+      <input type="search" {...rest} className="h-10 w-full rounded-full border border-white/80 bg-white/70 pr-4 pl-10 text-[14px] outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
     </span>
   );
 }
@@ -145,7 +145,7 @@ export function PillSelect({ className = '', children, ...rest }: SelectHTMLAttr
     <span className={`relative inline-flex ${className}`}>
       <select
         {...rest}
-        className="h-10 w-full min-w-0 cursor-pointer appearance-none truncate rounded-full border border-line bg-white pr-10 pl-4 text-[14px] font-semibold outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+        className="h-10 w-full min-w-0 cursor-pointer appearance-none truncate rounded-full border border-white/80 bg-white/70 pr-10 pl-4 text-[14px] font-semibold outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
       >
         {children}
       </select>
