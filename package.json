@@ -19,6 +19,7 @@
     "test:admin": "tsx scripts/test-admin.ts",
     "test:board": "tsx scripts/test-board.ts",
     "test:qr": "tsx scripts/test-qr.ts",
+    "test:likes": "tsx scripts/test-likes.ts",
     "test:load": "tsx scripts/load-test.ts",
     "icons": "tsx scripts/make-icons.ts",
     "emu:period": "tsx scripts/emu-period.ts",
@@ -28,7 +29,7 @@
     "deploy:rules": "firebase deploy --only firestore,storage --project sghs-program-app",
     "purge": "tsx scripts/purge-test-data.ts",
     "export": "tsx scripts/export-all.ts",
-    "test:all": "npm run test:login && npm run test:apply && npm run test:teacher && npm run test:admin && npm run test:board && npm run test:qr && npm run test:load"
+    "test:all": "npm run test:login && npm run test:apply && npm run test:teacher && npm run test:admin && npm run test:board && npm run test:qr && npm run test:likes && npm run test:load"
   },
   "dependencies": {
     "dompurify": "^3.4.16",

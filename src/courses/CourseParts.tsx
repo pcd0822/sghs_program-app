@@ -7,6 +7,7 @@ import { fillRatio, hypeTop, isFull, remaining, roomyTop } from '@shared/rules';
 import type { Course } from '@shared/types';
 import { formatDate, timeRange } from '@/lib/format';
 import { CourseThumb } from '@/ui/CourseThumb';
+import { LikeButton, useLikes } from './likes';
 import { CalendarIcon, ClockIcon, PersonIcon, PinIcon } from '@/ui/Icons';
 import { Pill } from '@/ui/Pill';
 import { Sheet } from '@/ui/Sheet';
@@ -40,6 +41,7 @@ export function CourseRow({ c, applied, highlight, onOpen }: RowProps) {
   const full = isFull(c);
   const r = remaining(c);
   return (
+    <div className="relative">
     <button
       type="button"
       onClick={() => onOpen(c)}
@@ -72,6 +74,9 @@ export function CourseRow({ c, applied, highlight, onOpen }: RowProps) {
         </p>
       </div>
     </button>
+      {/* 썸네일 왼쪽 위 하트 */}
+      <LikeButton courseId={c.id} className="absolute top-0.5 left-0" />
+    </div>
   );
 }
 
@@ -90,11 +95,12 @@ export function CourseRowSkeleton() {
 
 /** Hype / 여유 Top 5 가로 목록 */
 export function TopLists({ courses, onOpen }: { courses: Course[]; onOpen(c: Course): void }) {
-  const hype = hypeTop(courses);
+  const { counts } = useLikes();
+  const hype = hypeTop(courses, counts);
   const roomy = roomyTop(courses);
   return (
     <div className="space-y-6">
-      <TopStrip icon={Flame} tone="coral" title="실시간 Hype 강좌" empty="아직 신청이 시작되지 않았어요" list={hype} onOpen={onOpen} hot />
+      <TopStrip icon={Flame} tone="coral" title="실시간 Hype 강좌" empty="아직 Hype 강좌가 없어요. 끌리는 강좌에 하트를 눌러 보세요!" list={hype} onOpen={onOpen} hot />
       <TopStrip icon={Sprout} tone="mint" title="여유 있는 강좌" empty="모든 강좌가 마감됐어요" list={roomy} onOpen={onOpen} />
     </div>
   );
@@ -109,7 +115,7 @@ function TopStrip({ icon, tone, title, list, empty, onOpen, hot }: { icon: Lucid
       ) : (
         <ol className="-mx-5 mt-2 flex snap-x scroll-px-5 gap-3 overflow-x-auto px-5 pt-1 pb-3 [scrollbar-width:none]">
           {list.map((c, i) => (
-            <li key={c.id} className="w-[148px] shrink-0 snap-start">
+            <li key={c.id} className="relative w-[148px] shrink-0 snap-start">
               <button type="button" onClick={() => onOpen(c)} className="glass w-full rounded-[24px] p-2 text-left active:scale-[0.98]">
                 <div className="relative">
                   <CourseThumb type={c.type} name={c.name} url={c.thumbnailUrl} className="aspect-square w-full rounded-[18px]" />
@@ -127,6 +133,8 @@ function TopStrip({ icon, tone, title, list, empty, onOpen, hot }: { icon: Lucid
                   {c.count}/{c.capacity}명 · {seatsText(c)}
                 </p>
               </button>
+              {/* 썸네일 오른쪽 위 하트 */}
+              <LikeButton courseId={c.id} className="absolute top-1 right-1" />
             </li>
           ))}
         </ol>
@@ -154,6 +162,7 @@ export function CourseDetailSheet({ c, onClose, footer, notice }: DetailProps) {
           <div className="mt-4 flex flex-wrap items-center gap-1.5">
             <Pill tone="gray">{c.type}</Pill>
             <CourseTags c={c} />
+            <LikeButton courseId={c.id} variant="big" className="ml-auto" />
           </div>
           <h3 className="mt-2 text-[22px] leading-snug font-extrabold">{c.name}</h3>
           {c.intro && <p className="mt-2 text-[15px] leading-relaxed text-[#45454f]">{c.intro}</p>}

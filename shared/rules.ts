@@ -162,10 +162,23 @@ export function fillRatio(c: Course): number {
   return c.capacity ? c.count / c.capacity : 0;
 }
 
-export function hypeTop(courses: Course[], n = 5): Course[] {
-  return courses
-    .filter((c) => c.capacity !== null && c.count > 0)
-    .sort((a, b) => fillRatio(b) - fillRatio(a) || b.count - a.count)
+/** 강좌ID → 좋아요 수 (courseLikes) */
+export type LikeCounts = Record<string, number>;
+
+/**
+ * Hype 점수 = 신청 비율(0~1) + 좋아요 비율(가장 많은 강좌 대비 0~1). 둘을 같은 무게로 더한다.
+ * 신청이 열리기 전엔 좋아요만으로, 열린 뒤엔 둘이 함께 순위를 만든다.
+ */
+export function hypeScore(c: Course, likes: LikeCounts, maxLikes: number): number {
+  return fillRatio(c) + (maxLikes > 0 ? (likes[c.id] ?? 0) / maxLikes : 0);
+}
+
+/** Hype Top 5. 정원 없는 강좌는 빼고(사용자 결정), 신청도 좋아요도 없는 강좌는 뺀다. */
+export function hypeTop(courses: Course[], likes: LikeCounts = {}, n = 5): Course[] {
+  const pool = courses.filter((c) => c.capacity !== null && (c.count > 0 || (likes[c.id] ?? 0) > 0));
+  const maxLikes = Math.max(0, ...pool.map((c) => likes[c.id] ?? 0));
+  return pool
+    .sort((a, b) => hypeScore(b, likes, maxLikes) - hypeScore(a, likes, maxLikes) || (likes[b.id] ?? 0) - (likes[a.id] ?? 0) || b.count - a.count)
     .slice(0, n);
 }
 

@@ -53,6 +53,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 좋아요: 내 좋아요 목록은 본인만, 강좌별 좋아요 수는 로그인한 누구나. 쓰기는 Functions(setLike)만.
+    match /likes/{sid} {
+      allow read: if isSelf(sid);
+      allow write: if false;
+    }
+    match /courseLikes/{courseId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     // 학생 한 명의 신청 목록 전체(문서 1개)
     match /applications/{sid} {
       allow read: if isSelf(sid) || seesClass(resource.data.classNo);

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { canUseQr, type Course, type Teacher, type TimetableConfig } from '@shared/types';
 import { useSession } from '@/auth/AuthProvider';
 import { CourseDetailSheet } from '@/courses/CourseParts';
+import { TeacherLikesProvider } from '@/courses/likes';
 import { useCourses, useTeacherDoc, useTeachers, useTimetable } from '@/data/live';
 import { db } from '@/lib/firebase';
 
@@ -53,10 +54,12 @@ export function TeacherDataProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={value}>
-      {children}
-      <CourseDetailSheet c={sel} onClose={() => setSelected(null)} notice={sel && <TeacherNotice c={sel} onLeave={() => setSelected(null)} />} />
-    </Ctx.Provider>
+    <TeacherLikesProvider>
+      <Ctx.Provider value={value}>
+        {children}
+        <CourseDetailSheet c={sel} onClose={() => setSelected(null)} notice={sel && <TeacherNotice c={sel} onLeave={() => setSelected(null)} />} />
+      </Ctx.Provider>
+    </TeacherLikesProvider>
   );
 }
 

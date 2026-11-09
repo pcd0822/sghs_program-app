@@ -10,12 +10,14 @@
  *           가입 신청, 로그인 실패 기록·잠금
  * 남기는 것: 학생·교사 명단, 연락처, 강좌, 시간표, 신청 기간, 공지, 프로필 사진
  *   --with-notices 를 붙이면 공지도 지운다.
+ *   --with-likes 를 붙이면 강좌 좋아요(하트)도 지운다. 학생들이 신청 전에 미리 누른 진짜 좋아요가 있을 수 있어 기본은 남긴다.
  */
 
 import { connect } from './admin-connect';
 
 const YES = process.argv.includes('--yes');
 const WITH_NOTICES = process.argv.includes('--with-notices');
+const WITH_LIKES = process.argv.includes('--with-likes');
 const { db } = connect('시험 자료 삭제');
 
 const plan: { label: string; refs: FirebaseFirestore.DocumentReference[]; recursive?: boolean }[] = [];
@@ -32,12 +34,17 @@ await add('문의 작성자 정보', 'inquiryAuthors');
 await add('가입 신청', 'signupRequests');
 await add('로그인 실패 기록', 'adminLoginLogs');
 await add('로그인 잠금', 'loginGuards');
+if (WITH_LIKES) {
+  await add('학생별 좋아요', 'likes');
+  await add('강좌별 좋아요 수', 'courseLikes');
+}
 const shards = (await db.collectionGroup('shards').get()).docs;
 const courses = (await db.collection('courses').get()).docs;
 const counted = courses.filter((c) => Number(c.get('count') ?? 0) !== 0);
 
 console.log('\n지울 자료:');
 for (const p of plan) console.log(`  · ${p.label}: ${p.refs.length}건`);
+if (!WITH_LIKES) console.log('  (좋아요는 남겨요. 지우려면 --with-likes)');
 console.log(`  · 정원 없는 강좌 인원 수 칸: ${shards.length}건`);
 console.log(`  · 신청 인원 수를 0으로 되돌릴 강좌: ${counted.length}개`);
 

@@ -19,6 +19,7 @@ import {
 import type { Course, PeriodConfig, Student, TimetableConfig } from '@shared/types';
 import { useSession } from '@/auth/AuthProvider';
 import { CourseDetailSheet } from '@/courses/CourseParts';
+import { StudentLikesProvider } from '@/courses/likes';
 import { useApplication, useCourses, useNow, usePeriod, useStudentDoc, useTimetable } from '@/data/live';
 import { call, CallError } from '@/lib/call';
 import { formatDate } from '@/lib/format';
@@ -168,6 +169,7 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
   const close = () => setDialog(null);
 
   return (
+    <StudentLikesProvider sid={sid}>
     <Ctx.Provider value={value}>
       {children}
 
@@ -263,6 +265,7 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
         신청 기간 안에는 바꿀 수 있어요. 바꾸면 다시 제출해 주세요.
       </Modal>
     </Ctx.Provider>
+    </StudentLikesProvider>
   );
 }
 

@@ -97,3 +97,11 @@
 - 학번·이름·연락처 형식 검사는 `src/lib/studentInput.ts`(sidError·nameError·phoneError·useInlineErrors), 칸은 `src/ui/FormField.tsx`. 로그인·회원가입·프로필 연락처가 함께 쓴다.
 - 칸을 떠날 때·제출할 때 검사, 오류가 보이는 칸은 고치는 대로 다시 검사. 이름의 덜 된 글자(ㄱ·ㅏ)는 입력 중엔 탓하지 않는다(한글 조합).
 - 버튼은 막지 않고 누르면 모든 오류 표시 + 첫 칸으로 커서. 서버 오류(명단 불일치·잠김)는 버튼 위 `FormAlert` 한 줄 — 어느 칸이 틀렸는지 알려주지 않는다(명단 캐내기 방지, 서버 MISMATCH 문구 하나).
+
+## 강좌 좋아요(하트) (2026-11-09, 사용자 결정)
+- 학생만 누름, 수는 로그인한 모두가 봄. 내 목록 `likes/{학번}.courses`(본인만 읽음), 강좌별 수 `courseLikes/{강좌ID}.count`. 쓰기는 Functions `setLike`(functions/src/likes.ts)만.
+- **강좌 문서(courses)에 좋아요를 세지 않는다**: 신청 트랜잭션이 강좌 문서를 잠그므로 여는 날 신청이 느려진다. setLike 는 강좌 존재만 잠금 없이 확인.
+- 서버는 "누름=참/거짓"(멱등)을 받는다 — 연타·재전송해도 한 번만 셈. 시험 `npm run test:likes`(test:all 포함).
+- 화면은 낙관적 UI(`src/courses/likes.tsx`): 누르면 즉시 반영, 0.35초 모아 마지막 상태만 전송, 실패 시 되돌림. 화면 수 = 서버 수 + 아직 안 들어온 내 변화(adj).
+- Hype Top 5 = 신청 비율(0~1) + 좋아요 비율(최다 강좌 대비 0~1) 같은 무게(`hypeTop(courses, likes)`). 정원 없는 강좌는 계속 제외.
+- purge 는 좋아요를 기본으로 남긴다(신청 전 진짜 좋아요 보호). 지우려면 `--with-likes`.

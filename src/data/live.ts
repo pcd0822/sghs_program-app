@@ -2,7 +2,7 @@
 
 import { collection, doc, onSnapshot, type Query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import type { Application } from '@shared/rules';
+import type { Application, LikeCounts } from '@shared/rules';
 import type { Course, CourseQr, PeriodConfig, Student, Teacher, TimetableConfig } from '@shared/types';
 import { byDateTime } from '@shared/rules';
 import { db } from '@/lib/firebase';
@@ -38,6 +38,21 @@ function useDoc<T>(path: string | null): T | null | undefined {
 export const usePeriod = () => useDoc<PeriodConfig>('config/period');
 export const useTimetable = () => useDoc<TimetableConfig>('config/timetable');
 export const useApplication = (sid: string | null) => useDoc<Application>(sid ? `applications/${sid}` : null);
+/** 강좌별 좋아요 수(로그인한 사람만). 강좌 41개 정도라 컬렉션 전체를 실시간으로 받는다. */
+export function useCourseLikes(enabled = true): LikeCounts | undefined {
+  const [v, setV] = useState<LikeCounts>();
+  useEffect(() => {
+    if (!enabled) return;
+    return onSnapshot(
+      collection(db, 'courseLikes'),
+      (snap) => setV(Object.fromEntries(snap.docs.map((d) => [d.id, Math.max(0, Number(d.get('count')) || 0)]))),
+      () => setV({}),
+    );
+  }, [enabled]);
+  return v;
+}
+/** 내 좋아요 목록(본인만 읽음) */
+export const useMyLikes = (sid: string | null) => useDoc<{ courses?: Record<string, boolean> }>(sid ? `likes/${sid}` : null);
 export const useStudentDoc = (sid: string | null) => useDoc<Student>(sid ? `students/${sid}` : null);
 
 /**

@@ -5,3 +5,4 @@ export { markQrIncomplete, qrCheckin, qrControl } from './qr';
 export { adminAssign, adminPublish, adminRecount } from './admin';
 export { answerInquiry, createInquiry, deleteInquiry, saveNotice } from './board';
 export { requestSignup, reviewSignup, updateProfile } from './profile';
+export { setLike } from './likes';
