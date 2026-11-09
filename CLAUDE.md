@@ -88,7 +88,7 @@
 
 ## 디자인: 리퀴드 글래스 (2026-11-09, 사용자 요청)
 - 바탕은 `body::before` 고정 색 번짐 + `--color-canvas`. 페이지 틀에 `bg-white` 를 깔지 않는다(유리가 비칠 색이 없어진다).
-- 판은 `src/index.css` 의 유틸리티만 쓴다: `glass`(카드·목록 판), `glass-thick`(시트·모달·아래 메뉴·토스트), `glass-bar`(위에 붙는 막대), `glass-lens`(유리 안 선택된 탭·작은 버튼).
+- 판은 `src/index.css` 의 유틸리티만 쓴다: `glass`(카드·목록 판), `glass-thick`(시트·모달·토스트), `glass-island`+`glass-drop`(아래 메뉴 섬 — 뒤가 비치는 맑은 유리), `glass-bar`(위에 붙는 막대), `glass-lens`(유리 안 선택된 탭·작은 버튼).
 - 흐림은 판(컨테이너)에만. 목록 줄마다 `glass` 를 주지 않는다(휴대폰 성능). 줄은 `hover:bg-white/60` 정도.
 - `--color-soft`·`--color-line` 은 반투명. 입력칸은 `bg-white/60`, 포커스 시 `bg-white`.
 - QR 판은 흰 바탕 유지(카메라 인식). 아이콘은 lucide 만 — `‹ › ✕ ✓` 같은 글자 아이콘 금지. 이모지 금지(기존 규칙).

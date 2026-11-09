@@ -8,14 +8,14 @@ export interface NavItem {
   end?: boolean;
 }
 
-/** 화면 아래에 떠 있는 유리 알약 메뉴. 선택된 메뉴는 밝은 유리 렌즈. */
+/** 화면 아래에 떠 있는 맑은 유리 섬 메뉴(뒤 내용이 비친다). 선택된 메뉴는 물방울 렌즈. */
 export function BottomNav({ items }: { items: NavItem[] }) {
   return (
     <nav
       aria-label="주 메뉴"
       className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),12px)] pointer-events-none"
     >
-      <ul className="glass-thick pointer-events-auto flex gap-1 rounded-full p-1.5">
+      <ul className="glass-island pointer-events-auto flex gap-1 rounded-full p-1.5">
         {items.map((it) => (
           <li key={it.to}>
             <NavLink
@@ -23,7 +23,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
               end={it.end}
               className={({ isActive }) =>
                 `flex min-h-13 min-w-[58px] flex-col items-center justify-center rounded-full px-2.5 text-[11px] font-semibold transition ${
-                  isActive ? 'glass-lens text-brand-700' : 'text-sub hover:text-ink'
+                  isActive ? 'glass-drop text-brand-700' : 'text-ink/70 hover:text-ink'
                 }`
               }
             >
