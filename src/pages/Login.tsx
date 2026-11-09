@@ -1,9 +1,11 @@
 import { Backpack, ChevronLeft, KeyRound, type LucideIcon } from 'lucide-react';
-import { useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/ui/Button';
 import { IconTile, type GlyphTone } from '@/ui/Glyph';
+import { nameError, phoneError, sidError, useInlineErrors } from '@/lib/studentInput';
+import { FormAlert, FormField } from '@/ui/FormField';
 import { useToast } from '@/ui/Toast';
 
 function Shell({ icon, tone, title, desc, children }: { icon: LucideIcon; tone: GlyphTone; title: string; desc: string; children: ReactNode }) {
@@ -26,69 +28,81 @@ function Shell({ icon, tone, title, desc, children }: { icon: LucideIcon; tone: 
   );
 }
 
-function Field({ label, hint, ...rest }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
-  return (
-    <label className="block">
-      <span className="text-sm font-semibold text-sub">{label}</span>
-      <input
-        {...rest}
-        className="mt-1.5 block h-14 w-full rounded-2xl border border-white/80 bg-white/60 px-4 text-[17px] shadow-[inset_0_1px_2px_rgb(17_17_20/0.04)] outline-none backdrop-blur-md transition placeholder:text-[#a5a5b0] focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100"
-      />
-      {hint && <span className="mt-1 block text-[13px] text-sub">{hint}</span>}
-    </label>
-  );
-}
+// 학번·이름·연락처 형식 검사(화면). 모듈 상수라야 useInlineErrors 안 콜백이 매번 새로 안 만들어진다.
+const STUDENT_CHECKS = { sid: sidError, name: nameError, phone: phoneError };
 
 export function StudentLogin() {
   const { loginStudent } = useAuth();
-  const toast = useToast();
   const [sid, setSid] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
-  const ready = /^\d{5}$/.test(sid) && name.trim() !== '' && phone.replace(/\D/g, '').length >= 9;
+  /** 서버가 돌려준 오류(명단 불일치·잠김). 어느 칸이 틀렸는지는 서버도 알려주지 않는다. */
+  const [formError, setFormError] = useState<string | null>(null);
+  const v = useInlineErrors(STUDENT_CHECKS);
+
+  function edit(k: 'sid' | 'name' | 'phone', value: string, set: (x: string) => void) {
+    set(value);
+    v.onEdit(k, value);
+    setFormError(null);
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!ready || busy) return;
+    if (busy) return;
+    setFormError(null);
+    if (!v.validateAll({ sid, name, phone })) return;
     setBusy(true);
     try {
       await loginStudent({ sid, name, phone });
       // 로그인되면 App 이 알맞은 첫 화면으로 보낸다.
     } catch (err) {
-      toast((err as Error).message, 'error');
+      setFormError((err as Error).message);
       setBusy(false);
     }
   }
 
   return (
     <Shell icon={Backpack} tone="coral" title="학생 로그인" desc="등록된 학번 · 이름 · 연락처를 입력해 주세요.">
-      <form onSubmit={submit} className="mt-8 flex flex-1 flex-col gap-4">
-        <Field
+      <form onSubmit={submit} noValidate className="mt-8 flex flex-1 flex-col gap-3">
+        <FormField
           label="학번"
           inputMode="numeric"
           autoComplete="off"
           maxLength={5}
           placeholder="예: 30501"
           value={sid}
-          onChange={(e) => setSid(e.target.value.replace(/\D/g, ''))}
+          onChange={(e) => edit('sid', e.target.value.replace(/\D/g, ''), setSid)}
+          onBlur={(e) => v.onBlur('sid', e.target.value)}
           hint="학년 1자리 + 반 2자리 + 번호 2자리"
+          {...v.bind('sid')}
         />
-        <Field label="이름" autoComplete="name" placeholder="홍길동" value={name} onChange={(e) => setName(e.target.value)} />
-        <Field
+        <FormField
+          label="이름"
+          autoComplete="name"
+          placeholder="홍길동"
+          value={name}
+          onChange={(e) => edit('name', e.target.value, setName)}
+          onBlur={(e) => v.onBlur('name', e.target.value)}
+          {...v.bind('name')}
+        />
+        <FormField
           label="연락처"
           type="tel"
           inputMode="tel"
           autoComplete="tel"
           placeholder="010-1234-5678"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(e) => edit('phone', e.target.value, setPhone)}
+          onBlur={(e) => v.onBlur('phone', e.target.value)}
+          {...v.bind('phone')}
         />
-        <div className="mt-auto pt-6">
-          <Button type="submit" loading={busy} disabled={!ready}>
+        <div className="mt-auto space-y-3 pt-4">
+          <FormAlert>{formError}</FormAlert>
+          <Button type="submit" loading={busy}>
             로그인
           </Button>
-          <p className="mt-4 text-center text-[15px] text-sub">
+          <p className="mt-1 text-center text-[15px] text-sub">
             명단에 없다고 나오나요?{' '}
             <Link to="/signup" className="font-semibold text-brand-600 underline-offset-4 hover:underline">
               회원가입 신청

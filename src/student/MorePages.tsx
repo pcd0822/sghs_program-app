@@ -1,4 +1,5 @@
-import { Smartphone, UserRound } from 'lucide-react';
+import { CircleAlert, Smartphone, UserRound } from 'lucide-react';
+import { phoneError } from '@/lib/studentInput';
 import { Eyebrow } from '@/ui/Glyph';
 // 학생 프로필: 사진·연락처 수정(교사 화면에 바로 반영)
 
@@ -23,6 +24,8 @@ export function StudentProfilePage() {
   const [input, setInput] = useState('');
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** 칸 아래 인라인 오류(형식 검사 또는 서버 오류) */
+  const [phoneErr, setPhoneErr] = useState<string | null>(null);
 
   // 내 연락처(본인만 읽을 수 있음)
   useEffect(
@@ -37,6 +40,12 @@ export function StudentProfilePage() {
   const digits = input.replace(/\D/g, '');
   const changed = phone !== null && digits !== phone;
 
+  function askSave() {
+    const err = phoneError(input);
+    setPhoneErr(err);
+    if (!err) setConfirm(true);
+  }
+
   async function savePhone() {
     setConfirm(false);
     setBusy(true);
@@ -44,7 +53,7 @@ export function StudentProfilePage() {
       await call('updateProfile', { phone: digits });
       toast('연락처를 바꿨어요. 다음 로그인부터 새 연락처로 들어와요.', 'success');
     } catch (e) {
-      toast((e as Error).message, 'error');
+      setPhoneErr((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -72,19 +81,34 @@ export function StudentProfilePage() {
             type="tel"
             inputMode="tel"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // 오류가 보이는 동안은 고치는 대로 다시 검사
+              if (phoneErr) setPhoneErr(phoneError(e.target.value));
+            }}
+            onBlur={() => changed && setPhoneErr(phoneError(input))}
             aria-label="연락처"
-            className="h-12 min-w-0 flex-1 rounded-2xl border border-line bg-white/60 px-4 text-[17px] tabular-nums outline-none focus:border-brand-500 focus:bg-white"
+            aria-invalid={phoneErr ? true : undefined}
+            aria-describedby="phone-err"
+            className={`h-12 min-w-0 flex-1 rounded-2xl border px-4 text-[17px] tabular-nums outline-none focus:bg-white ${phoneErr ? 'border-rose-400 bg-rose-50/70 focus:border-rose-500' : 'border-line bg-white/60 focus:border-brand-500'}`}
           />
           <button
             type="button"
-            disabled={!changed || busy || digits.length < 10}
-            onClick={() => setConfirm(true)}
+            disabled={!changed || busy}
+            onClick={askSave}
             className="min-h-12 shrink-0 rounded-2xl bg-ink px-5 font-bold text-white disabled:opacity-30"
           >
             저장
           </button>
         </div>
+        <p id="phone-err" aria-live="polite" className="mt-1.5 flex items-start gap-1 text-[13px] font-semibold text-rose-600 empty:hidden">
+          {phoneErr && (
+            <>
+              <CircleAlert size={15} className="mt-px shrink-0" aria-hidden />
+              {phoneErr}
+            </>
+          )}
+        </p>
       </section>
 
       <div className="mt-8">

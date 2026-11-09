@@ -7,33 +7,42 @@ import { Link, useNavigate } from 'react-router-dom';
 import { call } from '@/lib/call';
 import { deviceId } from '@/lib/device';
 import { Button } from '@/ui/Button';
-import { useToast } from '@/ui/Toast';
+import { nameError, phoneError, sidError, useInlineErrors } from '@/lib/studentInput';
+import { FormAlert, FormField } from '@/ui/FormField';
+
+const STUDENT_CHECKS = { sid: sidError, name: nameError, phone: phoneError };
 
 export function Signup() {
   const nav = useNavigate();
-  const toast = useToast();
   const [sid, setSid] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  const ready = /^\d{5}$/.test(sid) && name.trim() !== '' && phone.replace(/\D/g, '').length >= 10;
+  const [formError, setFormError] = useState<string | null>(null);
+  const v = useInlineErrors(STUDENT_CHECKS);
+
+  function edit(k: 'sid' | 'name' | 'phone', value: string, set: (x: string) => void) {
+    set(value);
+    v.onEdit(k, value);
+    setFormError(null);
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!ready || busy) return;
+    if (busy) return;
+    setFormError(null);
+    if (!v.validateAll({ sid, name, phone })) return;
     setBusy(true);
     try {
       await call('requestSignup', { sid, name, phone, deviceId: deviceId() });
       setDone(true);
     } catch (err) {
-      toast((err as Error).message, 'error');
+      setFormError((err as Error).message);
     } finally {
       setBusy(false);
     }
   }
-
-  const field = 'mt-1.5 block h-14 w-full rounded-2xl border border-white/80 bg-white/60 px-4 text-[17px] outline-none backdrop-blur-md focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100';
 
   if (done) {
     return (
@@ -56,21 +65,40 @@ export function Signup() {
       <IconTile icon={FilePenLine} tone="sky" size={56} className="mt-6" />
       <h1 className="mt-4 text-[28px] font-extrabold tracking-tight">회원가입 신청</h1>
       <p className="mt-1 text-[15px] text-sub">학생 명단에 없을 때만 신청해 주세요. 관리자가 승인하면 로그인할 수 있어요.</p>
-      <form onSubmit={submit} className="mt-8 flex flex-1 flex-col gap-4">
-        <label className="block">
-          <span className="text-sm font-semibold text-sub">학번</span>
-          <input inputMode="numeric" maxLength={5} placeholder="예: 30501" value={sid} onChange={(e) => setSid(e.target.value.replace(/\D/g, ''))} className={field} />
-        </label>
-        <label className="block">
-          <span className="text-sm font-semibold text-sub">이름</span>
-          <input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className={field} />
-        </label>
-        <label className="block">
-          <span className="text-sm font-semibold text-sub">연락처</span>
-          <input type="tel" inputMode="tel" placeholder="010-1234-5678" value={phone} onChange={(e) => setPhone(e.target.value)} className={field} />
-        </label>
-        <div className="mt-auto pt-6">
-          <Button type="submit" variant="brand" loading={busy} disabled={!ready}>
+      <form onSubmit={submit} noValidate className="mt-8 flex flex-1 flex-col gap-3">
+        <FormField
+          label="학번"
+          inputMode="numeric"
+          maxLength={5}
+          placeholder="예: 30501"
+          value={sid}
+          onChange={(e) => edit('sid', e.target.value.replace(/\D/g, ''), setSid)}
+          onBlur={(e) => v.onBlur('sid', e.target.value)}
+          hint="학년 1자리 + 반 2자리 + 번호 2자리"
+          {...v.bind('sid')}
+        />
+        <FormField
+          label="이름"
+          autoComplete="name"
+          placeholder="홍길동"
+          value={name}
+          onChange={(e) => edit('name', e.target.value, setName)}
+          onBlur={(e) => v.onBlur('name', e.target.value)}
+          {...v.bind('name')}
+        />
+        <FormField
+          label="연락처"
+          type="tel"
+          inputMode="tel"
+          placeholder="010-1234-5678"
+          value={phone}
+          onChange={(e) => edit('phone', e.target.value, setPhone)}
+          onBlur={(e) => v.onBlur('phone', e.target.value)}
+          {...v.bind('phone')}
+        />
+        <div className="mt-auto space-y-3 pt-4">
+          <FormAlert>{formError}</FormAlert>
+          <Button type="submit" variant="brand" loading={busy}>
             가입 신청하기
           </Button>
         </div>

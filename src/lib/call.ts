@@ -42,7 +42,9 @@ export async function call<Req, Res>(name: string, data: Req, opts: CallOptions 
       }
       // 서버가 보낸 안내 문구(한국어)는 그대로 보여준다.
       const reason = e instanceof FunctionsError ? (e.details as { reason?: string } | undefined)?.reason : undefined;
-      throw new CallError(e instanceof Error ? e.message : '알 수 없는 오류가 났어요.', code, reason);
+      // Firebase 라이브러리가 문구 끝에 붙이는 HTTP 상태 " [403]" 은 학생에게 의미가 없어 뗀다.
+      const message = e instanceof Error ? e.message.replace(/\s*\[\d{3}\]$/, '') : '알 수 없는 오류가 났어요.';
+      throw new CallError(message, code, reason);
     }
   }
 }
