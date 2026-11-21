@@ -1,8 +1,8 @@
-// 출결 상태 판정: 화면(학급출결·교과출결·admin)과 서버가 같은 기준을 쓴다.
+// 프로그램(교과수업출결) 출결 상태 판정. 학급출결은 여기 기준을 쓰지 않는다(체크 안 하면 출석, QR 무관).
 // - 교사가 "결석/결과"로 체크했으면 결석.
 // - 교사가 "출석 인정"을 눌렀으면 출석(휴대폰 고장 등 QR 을 못 찍은 사정).
 // - 그날 신청한 프로그램이 있으면 시작·종료 QR 을 둘 다 찍어야 출석. 하나라도 빠지면 "QR 미완료"(출석 아님).
-// - 그날 신청한 프로그램이 없으면 기록이 없을 때 출석(예전과 같음).
+// - 담임이 결석 체크한 학생은 같은 기록이므로 프로그램 화면에서도 결석.
 
 export type AttendStatus = 'absent' | 'present' | 'qr';
 /** 교사가 고르는 값: 결석 · 출석 인정 · 자동(QR 기준) */
@@ -36,9 +36,3 @@ export function statusOf(mark: AttendMark, needsQr: boolean, qrDone: boolean): A
 /** 교사가 지금 고른 값 */
 export const attendMarkOf = (rec: AttendRecord | undefined): AttendMark => (rec?.absent ? 'absent' : rec?.present ? 'present' : 'auto');
 
-/** 엑셀·표에 쓰는 상태 이름 */
-export function statusText(st: AttendStatus, mark: AttendMark): string {
-  if (st === 'absent') return '결석(결과)';
-  if (st === 'qr') return 'QR 미완료(출석 아님)';
-  return mark === 'present' ? '출석(인정)' : '출석';
-}

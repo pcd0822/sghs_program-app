@@ -1,6 +1,6 @@
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { Check, ClipboardCheck, Download, Inbox, Minus, PartyPopper, X } from 'lucide-react';
-import { attendMarkOf, attendStatus, qrComplete, statusOf, statusText, type AttendStatus, type QrRecord } from '@shared/attendance';
+import { attendMarkOf, qrComplete, statusOf, type AttendStatus, type QrRecord } from '@shared/attendance';
 import { useMemo, useState } from 'react';
 import { OPERATING_DATES, TIME_ZONE } from '@shared/constants';
 import { useQueryDocs } from '@/data/live';
@@ -19,7 +19,7 @@ function todayOrFirst(): string {
 
 type View = 'absent' | 'class' | 'course';
 const VIEWS: [View, string][] = [
-  ['absent', '결석·QR 미완료'],
+  ['absent', '결석·결과만'],
   ['class', '학급 명렬표'],
   ['course', '수강신청자 명렬표'],
 ];
@@ -44,19 +44,15 @@ export default function AttendancePage() {
   const [busy, setBusy] = useState(false);
   const att = useQueryDocs<AttendanceDoc>(`admin-att-${date}`, () => query(collection(db, 'attendance'), where('date', '==', date)));
   const attMap = useMemo(() => toAttendanceMap(att), [att]);
-  // 그날 수강 기록(시작·종료 QR 찍은 시각). 프로그램을 신청한 날은 QR 을 다 찍어야 출석.
+  // 그날 수강 기록(시작·종료 QR 찍은 시각). 수강신청자 명렬표(프로그램)는 QR 을 다 찍어야 출석.
+  // 학급 명렬표·결석만 보기는 학급출결 기준(체크 안 하면 출석).
   const enr = useQueryDocs<Enr>(`admin-enr-${date}`, () => query(collection(db, 'enrollments'), where('date', '==', date)));
   const enrBySid = useMemo(() => {
     const m = new Map<string, Enr[]>();
     for (const e of enr ?? []) m.set(e.sid, [...(m.get(e.sid) ?? []), e]);
     return m;
   }, [enr]);
-  const itemsOn = (sid: string, d: string) => Object.values(a.applications.get(sid)?.items ?? {}).filter((it) => it.date === d);
-  const statusFor = (sid: string): AttendStatus => {
-    const need = itemsOn(sid, date).length;
-    const es = enrBySid.get(sid) ?? [];
-    return statusOf(attendMarkOf(attMap.get(sid)), need > 0, !!enr && es.length >= need && es.every(qrComplete));
-  };
+  const classStatus = (sid: string): AttendStatus => (attMap.get(sid)?.absent ? 'absent' : 'present');
   const nameOf = new Map(a.students.map((s) => [s.sid, s.name]));
   const coursesOf = (sid: string, d: string) =>
     Object.values(a.applications.get(sid)?.items ?? {})
@@ -73,8 +69,8 @@ export default function AttendancePage() {
     if (view === 'absent' || view === 'class') {
       const all = a.students
         .filter((s) => inClass(s.classNo))
-        .map((s) => ({ sid: s.sid, name: s.name, courses: coursesOf(s.sid, date), att: attMap.get(s.sid), st: statusFor(s.sid) }));
-      return view === 'absent' ? all.filter((r) => r.st !== 'present').sort((x, y) => x.sid.localeCompare(y.sid)) : all;
+        .map((s) => ({ sid: s.sid, name: s.name, courses: coursesOf(s.sid, date), att: attMap.get(s.sid), st: classStatus(s.sid) }));
+      return view === 'absent' ? all.filter((r) => r.st === 'absent').sort((x, y) => x.sid.localeCompare(y.sid)) : all;
     }
     if (!course) return [];
     return [...a.applications.values()]
@@ -104,15 +100,15 @@ export default function AttendancePage() {
         const k = `${e.date}__${e.sid}`;
         enrById.set(k, [...(enrById.get(k) ?? []), e]);
       }
-      const out: Cell[][] = [['날짜', '학번', '반', '이름', '그날 강좌', '상태', '출석 QR', '마지막 변경', '변경 시각']];
+      const out: Cell[][] = [['날짜', '학번', '반', '이름', '그날 강좌', '학급출결', '프로그램 QR', '마지막 변경', '변경 시각']];
       const studs = [...a.students].sort((x, y) => x.sid.localeCompare(y.sid));
       for (const d of OPERATING_DATES) {
         for (const s of studs) {
           const k = `${d}__${s.sid}`;
           const x = attById.get(k);
           const es = enrById.get(k) ?? [];
-          const qr = es.length ? (es.every(qrComplete) ? '완료' : '미완료') : '';
-          out.push([formatDate(d), s.sid, s.classNo, s.name, coursesOf(s.sid, d), statusText(attendStatus(x, es), attendMarkOf(x)), qr, x?.updatedByName ?? '', x ? formatDateTime(x.updatedAt) : '']);
+          const qr = es.length ? (es.every(qrComplete) ? '완료' : x?.present ? '미완료(출석 인정)' : '미완료') : '';
+          out.push([formatDate(d), s.sid, s.classNo, s.name, coursesOf(s.sid, d), x?.absent ? '결석(결과)' : '출석', qr, x?.updatedByName ?? '', x ? formatDateTime(x.updatedAt) : '']);
         }
       }
       await downloadXlsx(`출결기록_${stamp()}.xlsx`, [{ name: '출결 기록', rows: out }]);
@@ -129,7 +125,7 @@ export default function AttendancePage() {
         icon={ClipboardCheck}
         tone="mint"
         title="출결 조회"
-        desc="담임의 결석 체크와 교과 교사의 결과 체크는 같은 기록이에요. 프로그램을 신청한 날은 시작·종료 QR을 둘 다 찍어야 출석이고, 못 찍었으면 선생님이 출석 인정해야 출석이에요."
+        desc="담임의 결석 체크와 교과 교사의 결과 체크는 같은 기록이에요. 학급 명렬표는 체크가 없으면 출석, 수강신청자 명렬표(프로그램)는 시작·종료 QR을 둘 다 찍었거나 선생님이 출석 인정해야 출석이에요."
         actions={
           <SmallButton onClick={exportAll} disabled={busy}>
             <Download size={16} aria-hidden />
@@ -187,10 +183,10 @@ export default function AttendancePage() {
         </PillSelect>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:max-w-2xl">
+      <div className={`grid gap-3 lg:max-w-2xl ${view === 'course' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
         <Stat label={view === 'course' ? '신청자' : '재적'} value={total} />
         <Stat label="출석" value={total - absentCount - qrCount} tone="green" />
-        <Stat label="QR 미완료" value={qrCount} tone={qrCount ? 'orange' : 'default'} />
+        {view === 'course' && <Stat label="QR 미완료" value={qrCount} tone={qrCount ? 'orange' : 'default'} />}
         <Stat label="결석·결과" value={absentCount} tone={absentCount ? 'red' : 'default'} />
       </div>
 
@@ -201,7 +197,7 @@ export default function AttendancePage() {
           <Empty icon={Inbox} tone="slate" text={`${formatDate(date)}에 열리는 강좌가 없어요`} />
         ) : rows.length === 0 ? (
           view === 'absent' ? (
-            <Empty icon={PartyPopper} tone="mint" text={`${formatDate(date)} 결석·QR 미완료 학생이 없어요`} />
+            <Empty icon={PartyPopper} tone="mint" text={`${formatDate(date)} 결석·결과 기록이 없어요`} />
           ) : (
             <Empty icon={Inbox} tone="slate" text={view === 'course' ? '이 강좌를 신청한 학생이 없어요' : '학생이 없어요'} />
           )

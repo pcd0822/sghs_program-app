@@ -98,6 +98,12 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
   const qrMissingCount = list.filter((s) => statusFor(s) === 'qr').length;
   // 일괄 결과 처리 대상: QR 을 다 찍지 않았고 교사가 아직 아무것도 고르지 않은 학생
   const bulkTargets = list.filter((s) => statusFor(s) === 'qr');
+  // 담임(또는 이 강좌 담당이 아닌 교사)이 체크한 결석은 "결석 · 담임 체크"로 보여 준다.
+  const byHomeroom = (s: Enrollment) => {
+    const a = attMap.get(s.sid);
+    return !!a?.absent && !!a.updatedBy && !c.teacherIds.includes(a.updatedBy);
+  };
+  const absentProps = (s: Enrollment) => (byHomeroom(s) ? { absentShownAs: '결석', absentCaption: '담임 결석 체크' } : {});
   const rowTone = (s: Enrollment) => {
     const st = statusFor(s);
     return st === 'absent' ? 'bg-rose-50/50' : st === 'qr' ? 'bg-amber-50/50' : 'hover:bg-soft/60';
@@ -141,9 +147,9 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
         <span className="rounded-full bg-soft px-3 py-1.5 text-[14px] font-bold">수강생 {list.length}명</span>
         <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[14px] font-bold text-emerald-700">출석 {list.length - absentCount - qrMissingCount}</span>
         <span className="rounded-full bg-amber-50 px-3 py-1.5 text-[14px] font-bold text-amber-700">QR 미완료 {qrMissingCount}</span>
-        <span className="rounded-full bg-rose-50 px-3 py-1.5 text-[14px] font-bold text-rose-600">결과 {absentCount}</span>
+        <span className="rounded-full bg-rose-50 px-3 py-1.5 text-[14px] font-bold text-rose-600">결석·결과 {absentCount}</span>
       </div>
-      <p className="text-[13px] text-sub">시작·종료 QR을 둘 다 찍어야 "출석"이에요. QR을 못 찍은 사정이 있으면 "출석"을 눌러 인정해 주세요. 담임 선생님의 학급출결과 같은 기록이에요.</p>
+      <p className="text-[13px] text-sub">시작·종료 QR을 둘 다 찍어야 "출석"이에요. QR을 못 찍은 사정이 있으면 "출석"을 눌러 인정해 주세요. 담임 선생님이 결석 체크한 학생은 여기서도 "결석"으로 보여요.</p>
       {roster && bulkTargets.length > 0 && (
         <button
           type="button"
@@ -194,7 +200,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
                     <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
                   </td>
                   <td className="border-b border-line py-2 pr-2">
-                    <AttendControl needsQr qrDone={qrComplete(s)} pending={pending[s.sid]} absentLabel="결과" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+                    <AttendControl needsQr qrDone={qrComplete(s)} pending={pending[s.sid]} absentLabel="결과" {...absentProps(s)} meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
                   </td>
                 </tr>
               );
@@ -212,7 +218,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
                 <p className="text-[13px] text-sub tabular-nums">{s.sid}</p>
                 <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
               </div>
-              <AttendControl needsQr qrDone={qrComplete(s)} pending={pending[s.sid]} absentLabel="결과" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+              <AttendControl needsQr qrDone={qrComplete(s)} pending={pending[s.sid]} absentLabel="결과" {...absentProps(s)} meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
             </li>
           ))}
         </ul>

@@ -9,8 +9,7 @@ import { useQueryDocs } from '@/data/live';
 import { db } from '@/lib/firebase';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Pill } from '@/ui/Pill';
-import { attendMarkOf, qrComplete, statusOf, type AttendStatus } from '@shared/attendance';
-import { AttendControl, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
+import { AttendCheck, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
 import { useTeacher } from './TeacherData';
 
 const CLASSES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -122,21 +121,9 @@ function AttendanceTab({
     return m;
   }, [enr]);
   const { pending, toggle } = useAttendanceToggle(date);
-  const todaysOf = (sid: string) => Object.values(appBySid.get(sid)?.items ?? {}).filter((it) => it.date === date);
-  // 그날 신청 프로그램이 있으면 시작·종료 QR 을 다 찍어야 출석(shared/attendance.ts)
-  const qrOf = (sid: string) => {
-    const need = todaysOf(sid).length;
-    const enrs = enrBySid.get(sid) ?? [];
-    return { needsQr: need > 0, qrDone: !!enr && enrs.length >= need && enrs.every(qrComplete) };
-  };
-  const statusFor = (sid: string): AttendStatus => {
-    const q = qrOf(sid);
-    return statusOf(attendMarkOf(attMap.get(sid)), q.needsQr, q.qrDone);
-  };
-  const statuses = students.map((s) => statusFor(s.sid));
-  const absent = statuses.filter((x) => x === 'absent').length;
-  const qrMissing = statuses.filter((x) => x === 'qr').length;
-  const rowTone = (st: AttendStatus) => (st === 'absent' ? 'bg-rose-50/50' : st === 'qr' ? 'bg-amber-50/50' : 'hover:bg-soft/60');
+  // 학급출결은 체크 하나(결석 ↔ 출석). 처리 중인 값을 참/거짓으로.
+  const absentPending = (sid: string) => (pending[sid] === undefined ? undefined : pending[sid] === 'absent');
+  const absent = students.filter((s) => attMap.get(s.sid)?.absent).length;
 
   return (
     <div>
@@ -157,8 +144,7 @@ function AttendanceTab({
         </div>
         <div className="mt-2 flex gap-2 text-[14px] font-bold">
           <span className="rounded-full bg-soft px-3 py-1">재적 {students.length}</span>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">출석 {students.length - absent - qrMissing}</span>
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">QR 미완료 {qrMissing}</span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">출석 {students.length - absent}</span>
           <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-600">결석 {absent}</span>
         </div>
       </div>
@@ -181,8 +167,9 @@ function AttendanceTab({
             const todays = Object.values(appBySid.get(s.sid)?.items ?? {}).filter((it) => it.date === date);
             const phone = phoneBySid.get(s.sid);
             const enrs = enrBySid.get(s.sid) ?? [];
+            const isAbsent = !!attMap.get(s.sid)?.absent;
             return (
-              <tr key={s.sid} className={rowTone(statusFor(s.sid))}>
+              <tr key={s.sid} className={isAbsent ? 'bg-rose-50/50' : 'hover:bg-soft/60'}>
                 <td className="border-b border-line py-2 pl-2 font-semibold text-sub tabular-nums">{s.number}</td>
                 <td className="border-b border-line py-2">
                   <span className="flex items-center gap-2.5">
@@ -210,7 +197,7 @@ function AttendanceTab({
                   )}
                 </td>
                 <td className="border-b border-line py-2 pr-2">
-                  <AttendControl {...qrOf(s.sid)} pending={pending[s.sid]} absentLabel="결석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+                  <AttendCheck checked={isAbsent} pending={absentPending(s.sid)} onLabel="결석" offLabel="출석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v ? 'absent' : 'auto')} />
                 </td>
               </tr>
             );
@@ -225,7 +212,7 @@ function AttendanceTab({
           const todays = Object.values(appBySid.get(s.sid)?.items ?? {}).filter((it) => it.date === date);
           const phone = phoneBySid.get(s.sid);
           return (
-            <li key={s.sid} className={`-mx-4 flex items-center gap-3 px-4 py-2.5 ${statusFor(s.sid) === 'qr' ? 'bg-amber-50/50' : statusFor(s.sid) === 'absent' ? 'bg-rose-50/50' : ''}`}>
+            <li key={s.sid} className="flex items-center gap-3 py-2.5">
               <Avatar url={s.photoUrl} name={s.name} size={44} />
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-bold">
@@ -242,7 +229,14 @@ function AttendanceTab({
                   </a>
                 )}
               </div>
-              <AttendControl {...qrOf(s.sid)} pending={pending[s.sid]} absentLabel="결석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+              <AttendCheck
+                checked={!!attMap.get(s.sid)?.absent}
+                pending={absentPending(s.sid)}
+                onLabel="결석"
+                offLabel="출석"
+                meta={attMap.get(s.sid)}
+                onChange={(v) => toggle(s.sid, v ? 'absent' : 'auto')}
+              />
             </li>
           );
         })}

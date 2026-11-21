@@ -80,11 +80,13 @@
 - 찍은 시각은 `enrollments.qrStartAt / qrEndAt`(별도 복사본 없음). 둘 다 있어야 "QR 완료".
 - 미완료 처리는 자동이 아니라 교사 버튼 `markQrIncomplete`(admin · 전체 학급 · 담당 교사만) → 그날 attendance 를 결과로. 이미 결과이거나 출석 인정이면 건너뜀.
 
-## 출석 판정 = QR 기준 (2026-11-21, 사용자 결정)
-- **그날 신청한 프로그램이 있으면 시작·종료 QR 을 둘 다 찍어야 출석.** 하나라도 빠지면 "QR 미완료"(출석 아님, 노란색). 기록이 없다고 출석이 아니다.
-- 판정은 `shared/attendance.ts` 한 곳(`statusOf`·`attendStatus`): 결석 체크 > 교사 "출석 인정"(`attendance.present`) > QR. 그날 프로그램이 없으면 예전처럼 출석.
-- `setAttendance` 는 `mark: 'absent'|'present'|'auto'`(예전 `absent` 불리언도 받음: 거짓=auto). 화면은 `AttendControl` 두 버튼(결석/결과 · 출석): 같은 버튼을 다시 누르면 auto(QR 기준)로.
-- 학급출결·admin 은 그날 모든 신청 강좌 QR, 교과출결·admin 수강신청자 명렬표는 그 강좌 QR 기준. admin 출결 xlsx·`npm run export` 는 운영 날짜 × 학생 전부를 상태로 적는다.
+## 프로그램 출석 = QR 기준, 학급출결은 그대로 (2026-11-21, 사용자 결정)
+- **학급출결(담임)** 은 그날 학급 학생 출결 체크: 체크 안 하면 출석, QR 과 무관(`AttendCheck` 한 칸). QR 시각은 참고로만 보여 준다.
+- **교과수업출결(프로그램)** 만 QR 기준: 시작·종료 QR 을 둘 다 찍어야 출석, 하나라도 빠지면 "QR 미완료"(출석 아님, 노란색).
+  판정은 `shared/attendance.ts`(`statusOf`·`attendStatus`): 결석·결과 체크 > 교사 "출석 인정"(`attendance.present`) > 그 강좌 QR.
+- 담임 결석은 같은 attendance 문서라 프로그램 화면에도 "결석"으로 보인다. 체크한 교사(`updatedBy`)가 그 강좌 담당이 아니면 "결석 · 담임 결석 체크", 담당이면 "결과".
+- `setAttendance` 는 `mark: 'absent'|'present'|'auto'`(예전 `absent` 불리언도 받음: 거짓=auto). 프로그램 화면은 `AttendControl` 두 버튼(결과 · 출석), 같은 버튼을 다시 누르면 auto 로.
+- admin: 학급 명렬표·결석만 보기는 학급출결 기준, 수강신청자 명렬표는 그 강좌 QR 기준. 출결 xlsx·`npm run export` 는 운영 날짜 × 학생 전부(학급출결 + 프로그램 QR 완료 여부).
 
 ## 시간표 날짜 추가·교사 넓은 화면 (2026-11-09)
 - 시간표 날짜 = 기본 운영 기간(`OPERATING_DATES`) + admin 이 더한 날짜(`config/timetable.dates`) + 고정 일정이 있는 날짜. 계산은 `shared/timetable.ts` 의 `timetableDates`·`groupWeeks`(월요일 기준 주차) 한 곳에서.

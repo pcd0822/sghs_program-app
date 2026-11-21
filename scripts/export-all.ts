@@ -7,7 +7,6 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import * as XLSX from 'xlsx';
-import { attendMarkOf, attendStatus, statusText } from '../shared/attendance';
 import { OPERATING_DATES } from '../shared/constants';
 import { formatDate } from '../shared/text';
 import { connect } from './admin-connect';
@@ -22,7 +21,7 @@ const get = async (name: string) => (await db.collection(name).get()).docs.map((
 const [students, secrets, teachers, courses, apps, attendance, inquiries, authors, enrollments] = await Promise.all(
   ['students', 'studentSecrets', 'teachers', 'courses', 'applications', 'attendance', 'inquiries', 'inquiryAuthors', 'enrollments'].map(get),
 );
-// 출결: 운영 날짜 × 학생 전부. 그날 신청 프로그램이 있으면 시작·종료 QR 을 다 찍어야 출석(shared/attendance.ts).
+// 출결: 운영 날짜 × 학생 전부. 학급출결(체크 없으면 출석) + 그날 프로그램 QR 완료 여부.
 const attById = new Map(attendance.map((x) => [`${x.date}__${x.sid}`, x]));
 const enrByDaySid = new Map<string, Record<string, any>[]>();
 for (const e of enrollments) {
@@ -36,8 +35,8 @@ const attendanceRows = OPERATING_DATES.flatMap((d) =>
       const k = `${d}__${st.sid}`;
       const x = attById.get(k);
       const enr = enrByDaySid.get(k) ?? [];
-      const qr = enr.length ? (enr.every((e) => typeof e.qrStartAt === 'number' && typeof e.qrEndAt === 'number') ? '완료' : '미완료') : '';
-      return [formatDate(d), st.sid, st.classNo, statusText(attendStatus(x, enr), attendMarkOf(x)), qr, x?.updatedByName ?? '', time(x?.updatedAt)];
+      const qr = enr.length ? (enr.every((e) => typeof e.qrStartAt === 'number' && typeof e.qrEndAt === 'number') ? '완료' : x?.present ? '미완료(출석 인정)' : '미완료') : '';
+      return [formatDate(d), st.sid, st.classNo, x?.absent ? '결석(결과)' : '출석', qr, x?.updatedByName ?? '', time(x?.updatedAt)];
     }),
 );
 const phone = new Map(secrets.map((s) => [s._id, s.phone]));
@@ -86,7 +85,7 @@ const sheets: [string, unknown[][]][] = [
   [
     '출결',
     [
-      ['날짜', '학번', '반', '상태', '출석 QR', '마지막 변경', '변경 시각'],
+      ['날짜', '학번', '반', '학급출결', '프로그램 QR', '마지막 변경', '변경 시각'],
       ...attendanceRows,
     ],
   ],

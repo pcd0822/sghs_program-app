@@ -85,7 +85,13 @@ check('학생: 교사 코드는 못 읽음', !(await allowed(getDocs(collection(
 let r = await callAs(H1.idToken, 'setAttendance', { date: DATE, sid: '30101', absent: true });
 check('담임 1반: 30101 결석 체크', r.result?.ok === true, r.error?.message);
 let snap = await attQuerySubject();
-check('→ 교과 교사 출석부에 결과로 보임', absentOf(snap, '30101'));
+check('→ 교과 교사 출석부에 결석으로 보임', absentOf(snap, '30101'));
+{
+  // 화면은 "체크한 교사가 이 강좌 담당이 아니면" 담임 결석으로 표시한다(SubjectAttendancePage byHomeroom)
+  const by = snap.docs.find((d) => d.get('sid') === '30101')?.get('updatedBy') as string | undefined;
+  const courseTeachers = ((await db.doc(`courses/${COURSE}`).get()).get('teacherIds') as string[]) ?? [];
+  check('→ 담임이 체크한 기록으로 구분됨(담임 결석 체크 표시)', !!by && !courseTeachers.includes(by), by);
+}
 
 // 교과 교사 결과 → 담임 2반 학급출결 "결석"
 r = await callAs(S.idToken, 'setAttendance', { date: DATE, sid: '30201', absent: true });
