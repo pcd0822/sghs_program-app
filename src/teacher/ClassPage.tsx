@@ -271,7 +271,7 @@ function StatusTab({ students, appBySid }: { students: Student[]; appBySid: Map<
         <table className="w-max min-w-full border-separate border-spacing-0 text-left text-[13px]">
           <thead>
             <tr className="text-[12px] text-sub">
-              <th className="sticky left-0 z-[1] border-b border-line bg-transparent py-2 pr-3 font-bold text-ink max-md:backdrop-blur-md">번호·이름</th>
+              <th className="sticky left-0 z-[1] border-b border-line bg-transparent py-2 pr-3 pl-1 font-bold text-ink max-md:backdrop-blur-md">번호·이름</th>
               <th className="border-b border-line px-2 py-2 font-semibold">제출</th>
               {dates.map((d) => (
                 <th key={d} className="border-b border-line px-2 py-2 font-semibold whitespace-nowrap">
@@ -286,7 +286,7 @@ function StatusTab({ students, appBySid }: { students: Student[]; appBySid: Map<
               const items = Object.values(app?.items ?? {});
               return (
                 <tr key={s.sid} className={app?.submitted ? '' : 'bg-orange-50/40'}>
-                  <td className="sticky left-0 z-[1] border-b border-line bg-transparent py-2 pr-3 whitespace-nowrap text-ink max-md:backdrop-blur-md">
+                  <td className="sticky left-0 z-[1] border-b border-line bg-transparent py-2 pr-3 pl-1 whitespace-nowrap text-ink max-md:backdrop-blur-md">
                     <span className="mr-1 font-bold tabular-nums">{s.number}</span>
                     <span className="font-extrabold">{s.name}</span>
                   </td>
