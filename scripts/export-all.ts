@@ -7,6 +7,8 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import * as XLSX from 'xlsx';
+import { attendMarkOf, attendStatus, statusText } from '../shared/attendance';
+import { OPERATING_DATES } from '../shared/constants';
 import { formatDate } from '../shared/text';
 import { connect } from './admin-connect';
 
@@ -17,8 +19,26 @@ if (!process.argv.includes('--emulator') && !process.argv.includes('--yes')) {
 const { db } = connect('전체 자료 보관');
 const get = async (name: string) => (await db.collection(name).get()).docs.map((d) => ({ _id: d.id, ...d.data() })) as Record<string, any>[];
 
-const [students, secrets, teachers, courses, apps, attendance, inquiries, authors] = await Promise.all(
-  ['students', 'studentSecrets', 'teachers', 'courses', 'applications', 'attendance', 'inquiries', 'inquiryAuthors'].map(get),
+const [students, secrets, teachers, courses, apps, attendance, inquiries, authors, enrollments] = await Promise.all(
+  ['students', 'studentSecrets', 'teachers', 'courses', 'applications', 'attendance', 'inquiries', 'inquiryAuthors', 'enrollments'].map(get),
+);
+// 출결: 운영 날짜 × 학생 전부. 그날 신청 프로그램이 있으면 시작·종료 QR 을 다 찍어야 출석(shared/attendance.ts).
+const attById = new Map(attendance.map((x) => [`${x.date}__${x.sid}`, x]));
+const enrByDaySid = new Map<string, Record<string, any>[]>();
+for (const e of enrollments) {
+  const k = `${e.date}__${e.sid}`;
+  enrByDaySid.set(k, [...(enrByDaySid.get(k) ?? []), e]);
+}
+const attendanceRows = OPERATING_DATES.flatMap((d) =>
+  [...students]
+    .sort((a, b) => String(a.sid).localeCompare(String(b.sid)))
+    .map((st) => {
+      const k = `${d}__${st.sid}`;
+      const x = attById.get(k);
+      const enr = enrByDaySid.get(k) ?? [];
+      const qr = enr.length ? (enr.every((e) => typeof e.qrStartAt === 'number' && typeof e.qrEndAt === 'number') ? '완료' : '미완료') : '';
+      return [formatDate(d), st.sid, st.classNo, statusText(attendStatus(x, enr), attendMarkOf(x)), qr, x?.updatedByName ?? '', time(x?.updatedAt)];
+    }),
 );
 const phone = new Map(secrets.map((s) => [s._id, s.phone]));
 const tName = new Map(teachers.map((t) => [t._id, t.name]));
@@ -66,8 +86,8 @@ const sheets: [string, unknown[][]][] = [
   [
     '출결',
     [
-      ['날짜', '학번', '반', '상태', '마지막 변경', '변경 시각'],
-      ...attendance.sort((a, b) => `${a.date}${a.sid}`.localeCompare(`${b.date}${b.sid}`)).map((x) => [formatDate(x.date), x.sid, x.classNo, x.absent ? '결석(결과)' : '출석', x.updatedByName, time(x.updatedAt)]),
+      ['날짜', '학번', '반', '상태', '출석 QR', '마지막 변경', '변경 시각'],
+      ...attendanceRows,
     ],
   ],
   [

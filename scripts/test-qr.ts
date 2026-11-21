@@ -11,6 +11,7 @@ import { deleteApp, initializeApp as initClient, type FirebaseApp } from 'fireba
 import { connectAuthEmulator, getAuth, signInWithCustomToken } from 'firebase/auth';
 import { connectFirestoreEmulator, doc, getDoc, getFirestore } from 'firebase/firestore';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { attendStatus } from '../shared/attendance';
 import { callAs, check, db, finish, resetApplications, setPeriod, studentToken } from './emu-util';
 
 const DATE = '2026-12-01';
@@ -124,6 +125,30 @@ check('종료 체크 + 시작 시각 함께 돌려줌', r.result?.ok === true &&
 // ── 미완료 일괄 결과 처리
 r = await run(H1.idToken, 'markQrIncomplete', { courseId: COURSE });
 check('담임(미배정): 강좌 일괄 처리 불가', r.error?.status === 'PERMISSION_DENIED');
+
+// ── 판정 기준(shared/attendance.ts): 프로그램 있는 날은 QR 둘 다 찍어야 출석
+const e1 = (await db.doc(`enrollments/${COURSE}__30101`).get()).data()!;
+const e2 = (await db.doc(`enrollments/${COURSE}__30201`).get()).data()!;
+check('QR 둘 다 찍음 + 기록 없음 → 출석', attendStatus(undefined, [e1]) === 'present');
+check('QR 하나도 안 찍음 + 기록 없음 → QR 미완료(출석 아님)', attendStatus(undefined, [e2]) === 'qr');
+check('그날 프로그램 없음 → 출석', attendStatus(undefined, []) === 'present');
+check('결석 체크가 QR 보다 먼저', attendStatus({ absent: true }, [e1]) === 'absent');
+check('출석 인정이면 QR 없어도 출석', attendStatus({ present: true }, [e2]) === 'present');
+check('예전 기록(absent:false)만으로는 출석 아님', attendStatus({ absent: false }, [e2]) === 'qr');
+
+// 출석 인정한 학생은 일괄 결과 처리에서 빠진다
+r = await run(S.idToken, 'setAttendance', { date: DATE, sid: '30201', mark: 'present' });
+check('담당 교사: 출석 인정', r.result?.ok === true, r.error?.message);
+let a2p = (await db.doc(`attendance/${DATE}__30201`).get()).data();
+check('→ 기록에 present 저장', a2p?.present === true && a2p?.absent === false);
+r = await run(S.idToken, 'markQrIncomplete', { courseId: COURSE });
+check('출석 인정 학생은 일괄 결과 처리 안 함', r.result?.changed === 0, JSON.stringify(r.result ?? r.error));
+r = await run(S.idToken, 'setAttendance', { date: DATE, sid: '30201', mark: 'auto' });
+a2p = (await db.doc(`attendance/${DATE}__30201`).get()).data();
+check('인정 취소 → QR 기준으로 돌아감', r.result?.ok === true && a2p?.present === false && a2p?.absent === false);
+r = await run(S.idToken, 'setAttendance', { date: DATE, sid: '30201', mark: 'weird' });
+check('이상한 값 거부', r.error?.status === 'INVALID_ARGUMENT');
+
 r = await run(S.idToken, 'markQrIncomplete', { courseId: COURSE });
 check('담당 교사: 미완료 1명 결과 처리', r.result?.changed === 1, JSON.stringify(r.result ?? r.error));
 const a1 = (await db.doc(`attendance/${DATE}__30101`).get()).data();

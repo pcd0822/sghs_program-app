@@ -14,7 +14,8 @@ import { db } from '@/lib/firebase';
 import { formatDate, timeRange } from '@/lib/format';
 import { CourseThumb } from '@/ui/CourseThumb';
 import { PinIcon } from '@/ui/Icons';
-import { AttendCheck, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
+import { attendMarkOf, qrComplete, statusOf } from '@shared/attendance';
+import { AttendControl, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
 import { useTeacher } from './TeacherData';
 
 interface Enrollment {
@@ -91,11 +92,16 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
   const attMap = toAttendanceMap(att);
   const { pending, toggle } = useAttendanceToggle(c.date);
   const list = [...(roster ?? [])].sort((a, b) => a.sid.localeCompare(b.sid));
-  const absentCount = list.filter((s) => attMap.get(s.sid)?.absent).length;
-  const qrDone = (s: Enrollment) => typeof s.qrStartAt === 'number' && typeof s.qrEndAt === 'number';
-  const qrDoneCount = list.filter(qrDone).length;
-  // 일괄 결과 처리 대상: QR 을 다 찍지 않았고 아직 결과가 아닌 학생
-  const bulkTargets = list.filter((s) => !qrDone(s) && !attMap.get(s.sid)?.absent);
+  // 이 강좌 시작·종료 QR 을 다 찍어야 출석. 교사가 결과/출석 인정을 누르면 그 값이 먼저(shared/attendance.ts).
+  const statusFor = (s: Enrollment) => statusOf(attendMarkOf(attMap.get(s.sid)), true, qrComplete(s));
+  const absentCount = list.filter((s) => statusFor(s) === 'absent').length;
+  const qrMissingCount = list.filter((s) => statusFor(s) === 'qr').length;
+  // 일괄 결과 처리 대상: QR 을 다 찍지 않았고 교사가 아직 아무것도 고르지 않은 학생
+  const bulkTargets = list.filter((s) => statusFor(s) === 'qr');
+  const rowTone = (s: Enrollment) => {
+    const st = statusFor(s);
+    return st === 'absent' ? 'bg-rose-50/50' : st === 'qr' ? 'bg-amber-50/50' : 'hover:bg-soft/60';
+  };
   const [askBulk, setAskBulk] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const toast = useToast();
@@ -133,11 +139,11 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
 
       <div className="glass-bar sticky top-0 z-10 -mx-5 mt-3 flex flex-wrap gap-2 px-5 py-2 md:mx-0 md:rounded-[24px] md:px-4">
         <span className="rounded-full bg-soft px-3 py-1.5 text-[14px] font-bold">수강생 {list.length}명</span>
-        <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[14px] font-bold text-emerald-700">출석 {list.length - absentCount}</span>
+        <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[14px] font-bold text-emerald-700">출석 {list.length - absentCount - qrMissingCount}</span>
+        <span className="rounded-full bg-amber-50 px-3 py-1.5 text-[14px] font-bold text-amber-700">QR 미완료 {qrMissingCount}</span>
         <span className="rounded-full bg-rose-50 px-3 py-1.5 text-[14px] font-bold text-rose-600">결과 {absentCount}</span>
-        <span className="rounded-full bg-brand-50 px-3 py-1.5 text-[14px] font-bold text-brand-700">QR 완료 {qrDoneCount}</span>
       </div>
-      <p className="text-[13px] text-sub">체크하면 "결과", 비워 두면 "출석"이에요. 담임 선생님의 학급출결과 같은 기록이에요.</p>
+      <p className="text-[13px] text-sub">시작·종료 QR을 둘 다 찍어야 "출석"이에요. QR을 못 찍은 사정이 있으면 "출석"을 눌러 인정해 주세요. 담임 선생님의 학급출결과 같은 기록이에요.</p>
       {roster && bulkTargets.length > 0 && (
         <button
           type="button"
@@ -172,9 +178,8 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
           </thead>
           <tbody className="text-[15px]">
             {list.map((s) => {
-              const isAbsent = !!attMap.get(s.sid)?.absent;
               return (
-                <tr key={s.sid} className={isAbsent ? 'bg-rose-50/50' : 'hover:bg-soft/60'}>
+                <tr key={s.sid} className={rowTone(s)}>
                   <td className="border-b border-line py-2 pl-2 font-semibold text-sub tabular-nums">{s.sid}</td>
                   <td className="border-b border-line py-2">
                     <span className="flex items-center gap-2.5">
@@ -189,7 +194,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
                     <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
                   </td>
                   <td className="border-b border-line py-2 pr-2">
-                    <AttendCheck checked={isAbsent} pending={pending[s.sid]} onLabel="결과" offLabel="출석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+                    <AttendControl needsQr qrDone={qrComplete(s)} pending={pending[s.sid]} absentLabel="결과" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
                   </td>
                 </tr>
               );
@@ -200,21 +205,14 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
         {/* 휴대폰: 한 학생씩 쌓은 목록 */}
         <ul className="glass mt-3 divide-y divide-line rounded-[28px] px-4 md:hidden">
           {list.map((s) => (
-            <li key={s.sid} className="flex items-center gap-3 py-2.5">
+            <li key={s.sid} className={`-mx-4 flex items-center gap-3 px-4 py-2.5 ${statusFor(s) === 'qr' ? 'bg-amber-50/50' : statusFor(s) === 'absent' ? 'bg-rose-50/50' : ''}`}>
               <Avatar url={s.photoUrl} name={s.name} size={44} />
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-bold">{s.name}</p>
                 <p className="text-[13px] text-sub tabular-nums">{s.sid}</p>
                 <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
               </div>
-              <AttendCheck
-                checked={!!attMap.get(s.sid)?.absent}
-                pending={pending[s.sid]}
-                onLabel="결과"
-                offLabel="출석"
-                meta={attMap.get(s.sid)}
-                onChange={(v) => toggle(s.sid, v)}
-              />
+              <AttendControl needsQr qrDone={qrComplete(s)} pending={pending[s.sid]} absentLabel="결과" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
             </li>
           ))}
         </ul>
@@ -238,7 +236,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
           </>
         }
       >
-        시작 QR과 종료 QR 중 하나라도 찍지 않은 학생이에요. 그날 출결 기록이 "결과"가 되고, 담임 선생님 학급출결에는 "결석"으로 보여요. 나중에 한 명씩 다시 고칠 수 있어요.
+        시작 QR과 종료 QR 중 하나라도 찍지 않았고, "출석 인정"도 받지 않은 학생이에요. 그날 출결 기록이 "결과"가 되고, 담임 선생님 학급출결에는 "결석"으로 보여요. 나중에 한 명씩 다시 고칠 수 있어요.
       </Modal>
     </main>
   );

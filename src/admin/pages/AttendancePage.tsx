@@ -1,5 +1,6 @@
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { Check, ClipboardCheck, Download, Inbox, PartyPopper, X } from 'lucide-react';
+import { Check, ClipboardCheck, Download, Inbox, Minus, PartyPopper, X } from 'lucide-react';
+import { attendMarkOf, attendStatus, qrComplete, statusOf, statusText, type AttendStatus, type QrRecord } from '@shared/attendance';
 import { useMemo, useState } from 'react';
 import { OPERATING_DATES, TIME_ZONE } from '@shared/constants';
 import { useQueryDocs } from '@/data/live';
@@ -18,7 +19,7 @@ function todayOrFirst(): string {
 
 type View = 'absent' | 'class' | 'course';
 const VIEWS: [View, string][] = [
-  ['absent', '결석·결과만'],
+  ['absent', '결석·QR 미완료'],
   ['class', '학급 명렬표'],
   ['course', '수강신청자 명렬표'],
 ];
@@ -28,7 +29,10 @@ interface Row {
   name: string;
   courses: string;
   att?: AttendanceDoc;
+  st: AttendStatus;
 }
+
+type Enr = QrRecord & { sid: string; date: string; courseId: string };
 
 export default function AttendancePage() {
   const a = useAdmin();
@@ -40,6 +44,19 @@ export default function AttendancePage() {
   const [busy, setBusy] = useState(false);
   const att = useQueryDocs<AttendanceDoc>(`admin-att-${date}`, () => query(collection(db, 'attendance'), where('date', '==', date)));
   const attMap = useMemo(() => toAttendanceMap(att), [att]);
+  // 그날 수강 기록(시작·종료 QR 찍은 시각). 프로그램을 신청한 날은 QR 을 다 찍어야 출석.
+  const enr = useQueryDocs<Enr>(`admin-enr-${date}`, () => query(collection(db, 'enrollments'), where('date', '==', date)));
+  const enrBySid = useMemo(() => {
+    const m = new Map<string, Enr[]>();
+    for (const e of enr ?? []) m.set(e.sid, [...(m.get(e.sid) ?? []), e]);
+    return m;
+  }, [enr]);
+  const itemsOn = (sid: string, d: string) => Object.values(a.applications.get(sid)?.items ?? {}).filter((it) => it.date === d);
+  const statusFor = (sid: string): AttendStatus => {
+    const need = itemsOn(sid, date).length;
+    const es = enrBySid.get(sid) ?? [];
+    return statusOf(attendMarkOf(attMap.get(sid)), need > 0, !!enr && es.length >= need && es.every(qrComplete));
+  };
   const nameOf = new Map(a.students.map((s) => [s.sid, s.name]));
   const coursesOf = (sid: string, d: string) =>
     Object.values(a.applications.get(sid)?.items ?? {})
@@ -53,36 +70,51 @@ export default function AttendancePage() {
   // 지금 보는 명렬표의 줄
   const rows: Row[] = (() => {
     const inClass = (classNo: number) => cls === 'all' || classNo === cls;
-    if (view === 'absent') {
-      return (att ?? [])
-        .filter((x) => x.absent && inClass(x.classNo))
-        .sort((x, y) => x.sid.localeCompare(y.sid))
-        .map((x) => ({ sid: x.sid, name: nameOf.get(x.sid) ?? '', courses: coursesOf(x.sid, date), att: x }));
-    }
-    if (view === 'class') {
-      return a.students
+    if (view === 'absent' || view === 'class') {
+      const all = a.students
         .filter((s) => inClass(s.classNo))
-        .map((s) => ({ sid: s.sid, name: s.name, courses: coursesOf(s.sid, date), att: attMap.get(s.sid) }));
+        .map((s) => ({ sid: s.sid, name: s.name, courses: coursesOf(s.sid, date), att: attMap.get(s.sid), st: statusFor(s.sid) }));
+      return view === 'absent' ? all.filter((r) => r.st !== 'present').sort((x, y) => x.sid.localeCompare(y.sid)) : all;
     }
     if (!course) return [];
     return [...a.applications.values()]
       .filter((app) => app.items?.[course.id])
       .sort((x, y) => x.sid.localeCompare(y.sid))
-      .map((app) => ({ sid: app.sid, name: nameOf.get(app.sid) ?? app.name, courses: course.name, att: attMap.get(app.sid) }));
+      .map((app) => {
+        // 수강신청자 명렬표는 이 강좌 QR 기준
+        const e = (enrBySid.get(app.sid) ?? []).filter((x) => x.courseId === course.id);
+        const st = statusOf(attendMarkOf(attMap.get(app.sid)), true, !!enr && e.length > 0 && e.every(qrComplete));
+        return { sid: app.sid, name: nameOf.get(app.sid) ?? app.name, courses: course.name, att: attMap.get(app.sid), st };
+      });
   })();
 
-  const absentCount = view === 'absent' ? rows.length : rows.filter((r) => r.att?.absent).length;
+  const absentCount = rows.filter((r) => r.st === 'absent').length;
+  const qrCount = rows.filter((r) => r.st === 'qr').length;
   const total = view === 'course' ? rows.length : a.students.filter((s) => cls === 'all' || s.classNo === cls).length;
 
   async function exportAll() {
     setBusy(true);
     try {
-      const snap = await getDocs(collection(db, 'attendance'));
-      const out: Cell[][] = [['날짜', '학번', '반', '이름', '그날 강좌', '상태', '마지막 변경', '변경 시각']];
-      snap.docs
-        .map((d) => d.data() as AttendanceDoc)
-        .sort((x, y) => x.date.localeCompare(y.date) || x.sid.localeCompare(y.sid))
-        .forEach((x) => out.push([formatDate(x.date), x.sid, x.classNo, nameOf.get(x.sid) ?? '', coursesOf(x.sid, x.date), x.absent ? '결석(결과)' : '출석', x.updatedByName, formatDateTime(x.updatedAt)]));
+      // 운영 날짜 × 학생 전부. 기록이 없어도 QR 기준 상태를 적는다.
+      const [attSnap, enrSnap] = await Promise.all([getDocs(collection(db, 'attendance')), getDocs(collection(db, 'enrollments'))]);
+      const attById = new Map(attSnap.docs.map((d) => [d.id, d.data() as AttendanceDoc]));
+      const enrById = new Map<string, Enr[]>();
+      for (const d of enrSnap.docs) {
+        const e = d.data() as Enr;
+        const k = `${e.date}__${e.sid}`;
+        enrById.set(k, [...(enrById.get(k) ?? []), e]);
+      }
+      const out: Cell[][] = [['날짜', '학번', '반', '이름', '그날 강좌', '상태', '출석 QR', '마지막 변경', '변경 시각']];
+      const studs = [...a.students].sort((x, y) => x.sid.localeCompare(y.sid));
+      for (const d of OPERATING_DATES) {
+        for (const s of studs) {
+          const k = `${d}__${s.sid}`;
+          const x = attById.get(k);
+          const es = enrById.get(k) ?? [];
+          const qr = es.length ? (es.every(qrComplete) ? '완료' : '미완료') : '';
+          out.push([formatDate(d), s.sid, s.classNo, s.name, coursesOf(s.sid, d), statusText(attendStatus(x, es), attendMarkOf(x)), qr, x?.updatedByName ?? '', x ? formatDateTime(x.updatedAt) : '']);
+        }
+      }
       await downloadXlsx(`출결기록_${stamp()}.xlsx`, [{ name: '출결 기록', rows: out }]);
     } catch (e) {
       toast((e as Error).message, 'error');
@@ -97,7 +129,7 @@ export default function AttendancePage() {
         icon={ClipboardCheck}
         tone="mint"
         title="출결 조회"
-        desc="담임의 결석 체크와 교과 교사의 결과 체크는 같은 기록이에요. 기록이 없으면 출석이에요."
+        desc="담임의 결석 체크와 교과 교사의 결과 체크는 같은 기록이에요. 프로그램을 신청한 날은 시작·종료 QR을 둘 다 찍어야 출석이고, 못 찍었으면 선생님이 출석 인정해야 출석이에요."
         actions={
           <SmallButton onClick={exportAll} disabled={busy}>
             <Download size={16} aria-hidden />
@@ -155,20 +187,21 @@ export default function AttendancePage() {
         </PillSelect>
       )}
 
-      <div className="grid grid-cols-3 gap-3 lg:max-w-xl">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:max-w-2xl">
         <Stat label={view === 'course' ? '신청자' : '재적'} value={total} />
-        <Stat label="출석" value={total - absentCount} tone="green" />
+        <Stat label="출석" value={total - absentCount - qrCount} tone="green" />
+        <Stat label="QR 미완료" value={qrCount} tone={qrCount ? 'orange' : 'default'} />
         <Stat label="결석·결과" value={absentCount} tone={absentCount ? 'red' : 'default'} />
       </div>
 
       <Card>
-        {!att ? (
+        {!att || !enr ? (
           <div className="h-40 animate-pulse rounded-2xl bg-soft" />
         ) : view === 'course' && !course ? (
           <Empty icon={Inbox} tone="slate" text={`${formatDate(date)}에 열리는 강좌가 없어요`} />
         ) : rows.length === 0 ? (
           view === 'absent' ? (
-            <Empty icon={PartyPopper} tone="mint" text={`${formatDate(date)} 결석·결과 기록이 없어요`} />
+            <Empty icon={PartyPopper} tone="mint" text={`${formatDate(date)} 결석·QR 미완료 학생이 없어요`} />
           ) : (
             <Empty icon={Inbox} tone="slate" text={view === 'course' ? '이 강좌를 신청한 학생이 없어요' : '학생이 없어요'} />
           )
@@ -185,11 +218,11 @@ export default function AttendancePage() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.sid} className={r.att?.absent ? 'bg-rose-50/50' : ''}>
+                <tr key={r.sid} className={r.st === 'absent' ? 'bg-rose-50/50' : r.st === 'qr' ? 'bg-amber-50/50' : ''}>
                   <td className="tabular-nums">{r.sid}</td>
                   <td className="font-bold">{r.name}</td>
                   <td>
-                    <AttendMark absent={!!r.att?.absent} />
+                    <StatusMark st={r.st} manual={!!r.att?.present} />
                   </td>
                   {view !== 'course' && <td className="text-[13px]">{r.courses || <span className="text-zinc-300">—</span>}</td>}
                   <td className="text-[13px] whitespace-nowrap text-sub">{r.att?.updatedByName ? `${r.att.updatedByName} · ${formatDateTime(r.att.updatedAt)}` : <span className="text-zinc-300">—</span>}</td>
@@ -203,16 +236,20 @@ export default function AttendancePage() {
   );
 }
 
-/** 읽기 전용 체크 표시: 교사 화면의 체크 칸과 같은 모양 */
-function AttendMark({ absent }: { absent: boolean }) {
+/** 읽기 전용 상태 표시: 출석 · QR 미완료 · 결석·결과 */
+function StatusMark({ st, manual }: { st: AttendStatus; manual: boolean }) {
+  const look = {
+    absent: ['bg-rose-50 text-rose-600 ring-rose-200', 'bg-rose-500', X, '결석·결과'],
+    qr: ['bg-amber-50 text-amber-700 ring-amber-200', 'bg-amber-500', Minus, 'QR 미완료'],
+    present: ['bg-white text-emerald-700 ring-line', 'bg-emerald-500', Check, manual ? '출석(인정)' : '출석'],
+  } as const;
+  const [box, dot, Icon, label] = look[st];
   return (
-    <span
-      className={`inline-flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-bold ring-1 ${absent ? 'bg-rose-50 text-rose-600 ring-rose-200' : 'bg-white text-emerald-700 ring-line'}`}
-    >
-      <span className={`grid size-[18px] place-items-center rounded-md ${absent ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`} aria-hidden>
-        {absent ? <X size={13} strokeWidth={3} /> : <Check size={13} strokeWidth={3} />}
+    <span className={`inline-flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-bold ring-1 ${box}`}>
+      <span className={`grid size-[18px] place-items-center rounded-md text-white ${dot}`} aria-hidden>
+        <Icon size={13} strokeWidth={3} />
       </span>
-      {absent ? '결석·결과' : '출석'}
+      {label}
     </span>
   );
 }

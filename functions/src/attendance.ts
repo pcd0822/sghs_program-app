@@ -1,10 +1,12 @@
 // 출결: attendance/{날짜__학번} 하나를 학급출결(결석)과 교과수업출결(결과)이 함께 쓴다.
 // - 담임이 결석 체크 → 그 학생이 그날 신청한 강좌 담당 교사 출석부에도 "결과"로 보인다(반대도 같음).
 // - 교과 교사가 이 문서를 읽을 수 있도록 viewerTeacherIds(그날 그 학생 강좌의 담당 교사들)를 함께 저장한다.
+// - 상태 판정은 shared/attendance.ts: 결석 체크 > 출석 인정 > 그날 프로그램이 있으면 시작·종료 QR 둘 다 찍어야 출석.
 // - 바꿀 때마다 history 에 누가 언제 무엇으로 바꿨는지 남긴다.
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
+import type { AttendMark } from '../../shared/attendance';
 import { OPERATING_DATES } from '../../shared/constants';
 import { parseSid } from '../../shared/text';
 import { db, fail } from './app';
@@ -27,11 +29,16 @@ export async function refreshAttendanceViewers(date: string, sid: string): Promi
 export const setAttendance = onCall(async (req) => {
   const t = req.auth?.token;
   if (!t || t.role !== 'teacher' || typeof t.tid !== 'string') fail('교사로 로그인해 주세요.', 'unauthenticated');
-  const { date, sid: rawSid, absent } = (req.data ?? {}) as Record<string, unknown>;
+  const { date, sid: rawSid, absent: rawAbsent, mark: rawMark } = (req.data ?? {}) as Record<string, unknown>;
   const p = parseSid(rawSid);
-  if (!p || typeof date !== 'string' || !OPERATING_DATES.includes(date) || typeof absent !== 'boolean') {
+  // mark: 결석 · 출석 인정 · 자동(QR 기준). 예전 방식 absent(참=결석, 거짓=자동)도 받는다.
+  const mark: AttendMark | null =
+    rawMark === 'absent' || rawMark === 'present' || rawMark === 'auto' ? rawMark : typeof rawAbsent === 'boolean' ? (rawAbsent ? 'absent' : 'auto') : null;
+  if (!p || typeof date !== 'string' || !OPERATING_DATES.includes(date) || !mark) {
     fail('출결 정보가 올바르지 않아요.', 'invalid-argument');
   }
+  const absent = mark === 'absent';
+  const present = mark === 'present';
 
   const viewers = await viewerTeachersFor(date, p.sid);
   const homeroom = typeof t.homeroom === 'number' ? t.homeroom : null;
@@ -47,6 +54,7 @@ export const setAttendance = onCall(async (req) => {
     sid: p.sid,
     classNo: p.classNo,
     absent,
+    present,
     viewerTeacherIds: viewers,
     updatedBy: t.tid,
     updatedByName: String(teacher?.name ?? ''),
@@ -54,6 +62,7 @@ export const setAttendance = onCall(async (req) => {
   });
   batch.set(ref.collection('history').doc(), {
     absent,
+    present,
     by: t.tid,
     byName: String(teacher?.name ?? ''),
     at: now,

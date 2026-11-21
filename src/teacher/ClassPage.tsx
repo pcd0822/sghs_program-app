@@ -9,7 +9,8 @@ import { useQueryDocs } from '@/data/live';
 import { db } from '@/lib/firebase';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Pill } from '@/ui/Pill';
-import { AttendCheck, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
+import { attendMarkOf, qrComplete, statusOf, type AttendStatus } from '@shared/attendance';
+import { AttendControl, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
 import { useTeacher } from './TeacherData';
 
 const CLASSES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -121,7 +122,21 @@ function AttendanceTab({
     return m;
   }, [enr]);
   const { pending, toggle } = useAttendanceToggle(date);
-  const absent = students.filter((s) => attMap.get(s.sid)?.absent).length;
+  const todaysOf = (sid: string) => Object.values(appBySid.get(sid)?.items ?? {}).filter((it) => it.date === date);
+  // 그날 신청 프로그램이 있으면 시작·종료 QR 을 다 찍어야 출석(shared/attendance.ts)
+  const qrOf = (sid: string) => {
+    const need = todaysOf(sid).length;
+    const enrs = enrBySid.get(sid) ?? [];
+    return { needsQr: need > 0, qrDone: !!enr && enrs.length >= need && enrs.every(qrComplete) };
+  };
+  const statusFor = (sid: string): AttendStatus => {
+    const q = qrOf(sid);
+    return statusOf(attendMarkOf(attMap.get(sid)), q.needsQr, q.qrDone);
+  };
+  const statuses = students.map((s) => statusFor(s.sid));
+  const absent = statuses.filter((x) => x === 'absent').length;
+  const qrMissing = statuses.filter((x) => x === 'qr').length;
+  const rowTone = (st: AttendStatus) => (st === 'absent' ? 'bg-rose-50/50' : st === 'qr' ? 'bg-amber-50/50' : 'hover:bg-soft/60');
 
   return (
     <div>
@@ -142,7 +157,8 @@ function AttendanceTab({
         </div>
         <div className="mt-2 flex gap-2 text-[14px] font-bold">
           <span className="rounded-full bg-soft px-3 py-1">재적 {students.length}</span>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">출석 {students.length - absent}</span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">출석 {students.length - absent - qrMissing}</span>
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">QR 미완료 {qrMissing}</span>
           <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-600">결석 {absent}</span>
         </div>
       </div>
@@ -165,9 +181,8 @@ function AttendanceTab({
             const todays = Object.values(appBySid.get(s.sid)?.items ?? {}).filter((it) => it.date === date);
             const phone = phoneBySid.get(s.sid);
             const enrs = enrBySid.get(s.sid) ?? [];
-            const isAbsent = !!attMap.get(s.sid)?.absent;
             return (
-              <tr key={s.sid} className={isAbsent ? 'bg-rose-50/50' : 'hover:bg-soft/60'}>
+              <tr key={s.sid} className={rowTone(statusFor(s.sid))}>
                 <td className="border-b border-line py-2 pl-2 font-semibold text-sub tabular-nums">{s.number}</td>
                 <td className="border-b border-line py-2">
                   <span className="flex items-center gap-2.5">
@@ -195,7 +210,7 @@ function AttendanceTab({
                   )}
                 </td>
                 <td className="border-b border-line py-2 pr-2">
-                  <AttendCheck checked={isAbsent} pending={pending[s.sid]} onLabel="결석" offLabel="출석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+                  <AttendControl {...qrOf(s.sid)} pending={pending[s.sid]} absentLabel="결석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
                 </td>
               </tr>
             );
@@ -210,7 +225,7 @@ function AttendanceTab({
           const todays = Object.values(appBySid.get(s.sid)?.items ?? {}).filter((it) => it.date === date);
           const phone = phoneBySid.get(s.sid);
           return (
-            <li key={s.sid} className="flex items-center gap-3 py-2.5">
+            <li key={s.sid} className={`-mx-4 flex items-center gap-3 px-4 py-2.5 ${statusFor(s.sid) === 'qr' ? 'bg-amber-50/50' : statusFor(s.sid) === 'absent' ? 'bg-rose-50/50' : ''}`}>
               <Avatar url={s.photoUrl} name={s.name} size={44} />
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-bold">
@@ -227,14 +242,7 @@ function AttendanceTab({
                   </a>
                 )}
               </div>
-              <AttendCheck
-                checked={!!attMap.get(s.sid)?.absent}
-                pending={pending[s.sid]}
-                onLabel="결석"
-                offLabel="출석"
-                meta={attMap.get(s.sid)}
-                onChange={(v) => toggle(s.sid, v)}
-              />
+              <AttendControl {...qrOf(s.sid)} pending={pending[s.sid]} absentLabel="결석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
             </li>
           );
         })}
@@ -269,7 +277,7 @@ function StatusTab({ students, appBySid }: { students: Student[]; appBySid: Map<
         <table className="w-max min-w-full border-separate border-spacing-0 text-left text-[13px]">
           <thead>
             <tr className="text-[12px] text-sub">
-              <th className="sticky left-0 z-[1] border-b border-line bg-[#fbfafd] py-2 pr-3 font-semibold">번호·이름</th>
+              <th className="sticky left-0 z-[1] border-b border-line bg-transparent py-2 pr-3 font-bold text-ink max-md:backdrop-blur-md">번호·이름</th>
               <th className="border-b border-line px-2 py-2 font-semibold">제출</th>
               {dates.map((d) => (
                 <th key={d} className="border-b border-line px-2 py-2 font-semibold whitespace-nowrap">
@@ -284,9 +292,9 @@ function StatusTab({ students, appBySid }: { students: Student[]; appBySid: Map<
               const items = Object.values(app?.items ?? {});
               return (
                 <tr key={s.sid} className={app?.submitted ? '' : 'bg-orange-50/40'}>
-                  <td className="sticky left-0 z-[1] border-b border-line bg-[#fbfafd] py-2 pr-3 font-bold whitespace-nowrap">
-                    <span className="mr-1 text-sub tabular-nums">{s.number}</span>
-                    {s.name}
+                  <td className="sticky left-0 z-[1] border-b border-line bg-transparent py-2 pr-3 whitespace-nowrap text-ink max-md:backdrop-blur-md">
+                    <span className="mr-1 font-bold tabular-nums">{s.number}</span>
+                    <span className="font-extrabold">{s.name}</span>
                   </td>
                   <td className="border-b border-line px-2 py-2 whitespace-nowrap">
                     {app?.submitted ? (

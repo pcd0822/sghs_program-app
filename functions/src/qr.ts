@@ -104,7 +104,8 @@ export const markQrIncomplete = onCall(async (req) => {
 
   const attRefs = targets.map((e) => db.collection('attendance').doc(attendanceId(course.date, String(e.get('sid')))));
   const attSnaps = await db.getAll(...attRefs);
-  const todo = targets.filter((_, i) => attSnaps[i].get('absent') !== true);
+  // 이미 결과이거나 교사가 "출석 인정"한 학생은 건드리지 않는다.
+  const todo = targets.filter((_, i) => attSnaps[i].get('absent') !== true && attSnaps[i].get('present') !== true);
 
   const teacher = (await db.collection('teachers').doc(t.tid).get()).data();
   const byName = String(teacher?.name ?? '');
@@ -120,6 +121,7 @@ export const markQrIncomplete = onCall(async (req) => {
         sid,
         classNo: Number(e.get('classNo')),
         absent: true,
+        present: false,
         viewerTeacherIds: await viewerTeachersFor(course.date, sid),
         updatedBy: t.tid,
         updatedByName: byName,

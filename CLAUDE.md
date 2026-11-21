@@ -78,7 +78,13 @@
 - QR 은 교사가 켠 동안만 통한다(`QR_OPEN_MS` 30분 뒤, 또는 켠 교사가 QR 화면을 떠나면 꺼짐). 버튼은 "시작 출석 QR 켜기/끄기" 하나, 켜지면 QR #000000·꺼지면 흐리게. 이미지 저장 가능하므로 이게 대리 출석 방지선.
 - QR 권한(열기·이미지 저장): admin · 담임(1~9) · 전체 학급(0) · 그 강좌 담당 교사 = `canUseQr`(shared/types). 규칙도 같은 기준.
 - 찍은 시각은 `enrollments.qrStartAt / qrEndAt`(별도 복사본 없음). 둘 다 있어야 "QR 완료".
-- 미완료 처리는 자동이 아니라 교사 버튼 `markQrIncomplete`(admin · 전체 학급 · 담당 교사만) → 그날 attendance 를 결과로. 이미 결과면 건너뜀.
+- 미완료 처리는 자동이 아니라 교사 버튼 `markQrIncomplete`(admin · 전체 학급 · 담당 교사만) → 그날 attendance 를 결과로. 이미 결과이거나 출석 인정이면 건너뜀.
+
+## 출석 판정 = QR 기준 (2026-11-21, 사용자 결정)
+- **그날 신청한 프로그램이 있으면 시작·종료 QR 을 둘 다 찍어야 출석.** 하나라도 빠지면 "QR 미완료"(출석 아님, 노란색). 기록이 없다고 출석이 아니다.
+- 판정은 `shared/attendance.ts` 한 곳(`statusOf`·`attendStatus`): 결석 체크 > 교사 "출석 인정"(`attendance.present`) > QR. 그날 프로그램이 없으면 예전처럼 출석.
+- `setAttendance` 는 `mark: 'absent'|'present'|'auto'`(예전 `absent` 불리언도 받음: 거짓=auto). 화면은 `AttendControl` 두 버튼(결석/결과 · 출석): 같은 버튼을 다시 누르면 auto(QR 기준)로.
+- 학급출결·admin 은 그날 모든 신청 강좌 QR, 교과출결·admin 수강신청자 명렬표는 그 강좌 QR 기준. admin 출결 xlsx·`npm run export` 는 운영 날짜 × 학생 전부를 상태로 적는다.
 
 ## 시간표 날짜 추가·교사 넓은 화면 (2026-11-09)
 - 시간표 날짜 = 기본 운영 기간(`OPERATING_DATES`) + admin 이 더한 날짜(`config/timetable.dates`) + 고정 일정이 있는 날짜. 계산은 `shared/timetable.ts` 의 `timetableDates`·`groupWeeks`(월요일 기준 주차) 한 곳에서.
