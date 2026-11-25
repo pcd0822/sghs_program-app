@@ -1,6 +1,7 @@
-import { ClipboardList, Download, Puzzle, Trash2, Wrench } from 'lucide-react';
+import { ClipboardList, Download, Puzzle, Send, Trash2, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { checkPersonalRules, progress, requirements, type Application } from '@shared/rules';
+import { call } from '@/lib/call';
 import { formatDate, formatDateTime, timeRange } from '@/lib/format';
 import { downloadXlsx, stamp, type Cell } from '@/lib/xlsx';
 import { Button } from '@/ui/Button';
@@ -138,6 +139,7 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState<{ date: string; replace: string | null } | null>(null);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [askSubmit, setAskSubmit] = useState(false);
   const items = app?.items ?? {};
   const p = progress(a.courses, items);
   const byId = new Map(a.courses.map((c) => [c.id, c]));
@@ -148,6 +150,20 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
       const warning = await a.assign(s.sid, add, remove);
       toast(warning ? `${okText} · 주의: ${warning}` : okText, warning ? 'info' : 'success');
       setPicking(null);
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // 관리자 대신 제출: 신청 기간이 끝나도 된다. 빠진 강좌가 있으면 서버가 거부한다.
+  async function submitForStudent() {
+    setBusy(true);
+    try {
+      await call<{ sid: string }, { already: boolean }>('adminSubmit', { sid: s.sid });
+      toast(`${s.name} 학생을 "제출"로 바꿨어요`, 'success');
+      setAskSubmit(false);
     } catch (e) {
       toast((e as Error).message, 'error');
     } finally {
@@ -167,6 +183,16 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
           </Pill>
           <Pill tone={app?.submitted ? 'green' : 'gray'}>{app?.submitted ? '제출' : '미제출'}</Pill>
         </div>
+        {!app?.submitted && Object.keys(items).length > 0 && (
+          <div className="mb-3 flex items-center gap-2 rounded-2xl bg-orange-50/80 px-3 py-2 ring-1 ring-orange-100">
+            <span className="flex-1 text-[13px] text-orange-700">
+              {p.complete ? '모두 신청했지만 아직 제출하지 않았어요. 신청 기간이 끝나도 관리자가 대신 제출할 수 있어요.' : '빠진 강좌를 먼저 채우면 대신 제출할 수 있어요.'}
+            </span>
+            <SmallButton tone="brand" disabled={busy || !p.complete} onClick={() => setAskSubmit(true)}>
+              <Send size={14} aria-hidden /> 제출로 바꾸기
+            </SmallButton>
+          </div>
+        )}
         <p className="mb-3 rounded-2xl bg-soft px-3 py-2 text-[13px] text-sub">
           수동 배정은 마감 후에도 할 수 있고 정원을 넘길 수 있어요(경고만 표시). 같은 코드 중복·같은 날 선택 2개는 막혀요.
         </p>
@@ -247,6 +273,26 @@ function StudentPanel({ s, app, dates, onClose }: { s: StudentRow; app: Applicat
           </ul>
         </Sheet>
       )}
+
+      <Modal
+        open={askSubmit}
+        onClose={() => setAskSubmit(false)}
+        icon={Send}
+        tone="mint"
+        title={`${s.name} 학생을 "제출"로 바꿀까요?`}
+        actions={
+          <>
+            <Button loading={busy} onClick={submitForStudent}>
+              제출로 바꾸기
+            </Button>
+            <Button variant="ghost" onClick={() => setAskSubmit(false)}>
+              취소
+            </Button>
+          </>
+        }
+      >
+        신청한 강좌는 그대로 두고 제출 상태만 바꿔요. 바로 반영돼요.
+      </Modal>
 
       <Modal
         open={!!confirmDel}

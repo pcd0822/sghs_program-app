@@ -1,10 +1,11 @@
 // 출결 버튼과 기록 처리. 학급출결(결석)과 교과수업출결(결과)이 같은 기록을 쓴다.
-// - 학급출결: 그날 학급 학생 출결. 체크 안 하면 출석(QR 과 무관).
-// - 교과수업출결(프로그램): 시작·종료 QR 둘 다 찍어야 출석(shared/attendance.ts). 담임 결석은 여기서도 "결석".
+// 기본은 "미체크". 학생이 QR 을 다 찍었거나 교사가 "출석"을 눌러야 출석(판정은 shared/attendance.ts).
+// - 학급출결: 결석·출석 두 버튼. 그날 프로그램 QR 을 다 찍은 학생은 담임이 안 눌러도 출석.
+// - 교과수업출결(프로그램): 그 강좌 QR 기준. 담임 결석은 여기서도 "결석".
 
 import { Check, Minus, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { attendMarkOf, statusOf, type AttendMark } from '@shared/attendance';
+import type { AttendMark, AttendStatus } from '@shared/attendance';
 import { call } from '@/lib/call';
 import { formatClock, formatDateTime } from '@/lib/format';
 import { useToast } from '@/ui/Toast';
@@ -16,7 +17,7 @@ export interface AttendanceDoc {
   absent: boolean;
   /** 마지막으로 바꾼 교사 ID(담임 결석인지 프로그램 결과인지 구분) */
   updatedBy?: string;
-  /** 교사가 직접 "출석 인정" */
+  /** 교사가 직접 "출석" 체크 */
   present?: boolean;
   updatedByName: string;
   updatedAt: number;
@@ -51,53 +52,11 @@ export function useAttendanceToggle(date: string) {
   return { pending, toggle };
 }
 
-interface CheckProps {
-  checked: boolean;
-  /** 처리 중이면 바꾸려는 값 */
-  pending?: boolean;
-  /** 체크했을 때 이름: 결석 / 결과 */
-  onLabel: string;
-  offLabel: string;
-  meta?: AttendanceDoc;
-  onChange(next: boolean): void;
-}
-
-/** 학급출결: 큰 체크 칸 하나(체크 = 결석, 비우면 출석) + 아래 작은 글씨로 마지막 변경자·시각 */
-export function AttendCheck({ checked, pending, onLabel, offLabel, meta, onChange }: CheckProps) {
-  const busy = pending !== undefined;
-  const shown = busy ? pending : checked;
-  return (
-    <div className="flex shrink-0 flex-col items-end">
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={shown}
-        aria-label={`${onLabel} 체크`}
-        disabled={busy}
-        onClick={() => onChange(!checked)}
-        className={`flex min-h-11 min-w-[84px] items-center justify-center gap-1.5 rounded-full px-3 text-[14px] font-bold ring-1 transition active:scale-95 disabled:opacity-60 ${
-          shown ? 'bg-rose-50 text-rose-600 ring-rose-200' : 'bg-white/80 text-emerald-700 ring-white shadow-[0_1px_2px_rgb(17_17_20/0.06)]'
-        }`}
-      >
-        <span className={`grid size-5 place-items-center rounded-md ${shown ? 'bg-rose-500 text-white' : 'ring-1 ring-zinc-300'}`} aria-hidden>
-          {shown && <X size={14} strokeWidth={3} />}
-        </span>
-        {shown ? onLabel : offLabel}
-      </button>
-      {meta?.updatedByName && (
-        <span className="mt-0.5 text-[11px] text-[#9a9aa5]">
-          {meta.updatedByName} · {formatDateTime(meta.updatedAt)}
-        </span>
-      )}
-    </div>
-  );
-}
-
 interface ControlProps {
-  /** 이 학생이 그날 QR 을 찍어야 하는지(신청 프로그램이 있는지) */
-  needsQr: boolean;
-  /** 그날 프로그램 QR 을 다 찍었는지 */
-  qrDone: boolean;
+  /** 지금 고른 값(화면마다 해석이 다르다: 프로그램 화면은 담임의 "출석"을 자동으로 본다) */
+  mark: AttendMark;
+  /** 고른 값 → 상태(학급출결·프로그램 판정이 다르다) */
+  resolve(mark: AttendMark): AttendStatus;
   /** 처리 중이면 바꾸려는 값 */
   pending?: AttendMark;
   /** 결석 쪽 이름: 결석 / 결과 */
@@ -105,24 +64,36 @@ interface ControlProps {
   /** 결석일 때 이름을 바꿔 보여줄 때(담임 결석 → "결석") */
   absentShownAs?: string;
   absentCaption?: string;
+  /** 교사가 직접 출석을 눌렀을 때 아래 글씨: 출석 체크 / 출석 인정 */
+  presentCaption: string;
   meta?: AttendanceDoc;
   onChange(next: AttendMark): void;
 }
 
 /**
- * 출결 버튼 두 개(결석·출석) + 아래 작은 글씨로 상태와 마지막 변경자.
- * 교과수업출결(프로그램) 전용. 시작·종료 QR 을 다 찍어야 출석. 못 찍었으면 둘 다 꺼진 "QR 미완료"(출석 아님).
- * - 결석: 누르면 결석, 다시 누르면 취소(QR 기준으로 돌아감)
- * - 출석: QR 미완료·결석인 학생을 "출석 인정", 다시 누르면 취소
+ * 출결 버튼 두 개(결석·출석) + 아래 작은 글씨로 상태와 마지막 변경자. 학급출결·교과수업출결이 함께 쓴다.
+ * 기본은 아무것도 켜지지 않은 상태(미체크 / QR 미완료). QR 을 다 찍었으면 출석이 저절로 켜진다.
+ * - 켜진 버튼을 한 번 더 누르면 교사 체크가 지워진다(초기화 → QR 기준으로 돌아감).
  */
-export function AttendControl({ needsQr, qrDone, pending, absentLabel, absentShownAs, absentCaption, meta, onChange }: ControlProps) {
+export function AttendControl({ mark: saved, resolve, pending, absentLabel, absentShownAs, absentCaption, presentCaption, meta, onChange }: ControlProps) {
   const busy = pending !== undefined;
-  const mark = busy ? pending : attendMarkOf(meta);
-  const status = statusOf(mark, needsQr, qrDone);
+  const mark = busy ? pending : saved;
+  const status = resolve(mark);
   const base = 'flex min-h-11 min-w-[66px] items-center justify-center gap-1 rounded-full px-2.5 text-[14px] font-bold ring-1 transition active:scale-95 disabled:opacity-60';
   const off = 'bg-white/70 text-sub ring-white shadow-[0_1px_2px_rgb(17_17_20/0.06)]';
   const caption =
-    status === 'qr' ? '시작·종료 QR 미완료 · 출석 아님' : status === 'absent' ? (busy ? '' : (absentCaption ?? '')) : mark === 'present' ? '출석 인정' : status === 'present' && needsQr ? 'QR 출석' : '';
+    status === 'qr'
+      ? '시작·종료 QR 미완료 · 출석 아님'
+      : status === 'none'
+        ? '미체크'
+        : status === 'absent'
+          ? busy
+            ? ''
+            : (absentCaption ?? '')
+          : mark === 'present'
+            ? presentCaption
+            : 'QR 출석';
+  const tone = status === 'qr' ? 'text-amber-600' : status === 'none' ? 'text-zinc-400' : status === 'absent' ? 'text-rose-600' : 'text-emerald-700';
   return (
     <div className="flex shrink-0 flex-col items-end">
       <div className="flex gap-1" role="group" aria-label="출결">
@@ -140,18 +111,16 @@ export function AttendControl({ needsQr, qrDone, pending, absentLabel, absentSho
           type="button"
           aria-pressed={status === 'present'}
           disabled={busy}
-          onClick={() => {
-            if (mark === 'present') onChange('auto');
-            else if (status !== 'present') onChange('present');
-          }}
+          onClick={() => onChange(mark === 'present' ? 'auto' : 'present')}
           className={`${base} ${status === 'present' ? 'bg-emerald-500 text-white ring-emerald-500' : off}`}
         >
           {status === 'present' && <Check size={14} strokeWidth={3} aria-hidden />}
           출석
         </button>
       </div>
-      {caption && <span className={`mt-0.5 text-[11px] font-bold ${status === 'qr' ? 'text-amber-600' : status === 'absent' ? 'text-rose-600' : 'text-emerald-700'}`}>{caption}</span>}
-      {meta?.updatedByName && (
+      {caption && <span className={`mt-0.5 text-[11px] font-bold ${tone}`}>{caption}</span>}
+      {/* 초기화(자동)로 돌아간 기록은 변경자를 숨긴다 — 처음 상태처럼 보이게 */}
+      {meta?.updatedByName && !busy && saved !== 'auto' && (
         <span className="text-[11px] text-[#9a9aa5]">
           {meta.updatedByName} · {formatDateTime(meta.updatedAt)}
         </span>

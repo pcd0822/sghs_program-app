@@ -14,7 +14,7 @@ import { db } from '@/lib/firebase';
 import { formatDate, timeRange } from '@/lib/format';
 import { CourseThumb } from '@/ui/CourseThumb';
 import { PinIcon } from '@/ui/Icons';
-import { attendMarkOf, qrComplete, statusOf } from '@shared/attendance';
+import { programMarkOf, programStatusOf, qrComplete, type AttendMark } from '@shared/attendance';
 import { AttendControl, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
 import { useTeacher } from './TeacherData';
 
@@ -93,7 +93,10 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
   const { pending, toggle } = useAttendanceToggle(c.date);
   const list = [...(roster ?? [])].sort((a, b) => a.sid.localeCompare(b.sid));
   // 이 강좌 시작·종료 QR 을 다 찍어야 출석. 교사가 결과/출석 인정을 누르면 그 값이 먼저(shared/attendance.ts).
-  const statusFor = (s: Enrollment) => statusOf(attendMarkOf(attMap.get(s.sid)), true, qrComplete(s));
+  // 담임이 학급출결에서 누른 "출석"은 여기선 치지 않는다(프로그램에 빠진 학생이 보이도록).
+  const markFor = (s: Enrollment) => programMarkOf(attMap.get(s.sid), c.teacherIds);
+  const resolveFor = (s: Enrollment) => (m: AttendMark) => programStatusOf(m, qrComplete(s));
+  const statusFor = (s: Enrollment) => resolveFor(s)(markFor(s));
   const absentCount = list.filter((s) => statusFor(s) === 'absent').length;
   const qrMissingCount = list.filter((s) => statusFor(s) === 'qr').length;
   // 일괄 결과 처리 대상: QR 을 다 찍지 않았고 교사가 아직 아무것도 고르지 않은 학생
@@ -149,7 +152,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
         <span className="rounded-full bg-amber-50 px-3 py-1.5 text-[14px] font-bold text-amber-700">QR 미완료 {qrMissingCount}</span>
         <span className="rounded-full bg-rose-50 px-3 py-1.5 text-[14px] font-bold text-rose-600">결석·결과 {absentCount}</span>
       </div>
-      <p className="text-[13px] text-sub">시작·종료 QR을 둘 다 찍어야 "출석"이에요. QR을 못 찍은 사정이 있으면 "출석"을 눌러 인정해 주세요. 담임 선생님이 결석 체크한 학생은 여기서도 "결석"으로 보여요.</p>
+      <p className="text-[13px] text-sub">시작·종료 QR을 둘 다 찍어야 "출석"이에요. QR을 못 찍은 사정이 있으면 "출석"을 눌러 인정해 주세요. 담임 선생님이 결석 체크한 학생은 여기서도 "결석"으로 보여요. 켜진 버튼을 한 번 더 누르면 체크가 지워져요.</p>
       {roster && bulkTargets.length > 0 && (
         <button
           type="button"
@@ -200,7 +203,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
                     <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
                   </td>
                   <td className="border-b border-line py-2 pr-2">
-                    <AttendControl needsQr qrDone={qrComplete(s)} pending={pending[s.sid]} absentLabel="결과" {...absentProps(s)} meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+                    <AttendControl mark={markFor(s)} resolve={resolveFor(s)} pending={pending[s.sid]} absentLabel="결과" presentCaption="출석 인정" {...absentProps(s)} meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
                   </td>
                 </tr>
               );
@@ -218,7 +221,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
                 <p className="text-[13px] text-sub tabular-nums">{s.sid}</p>
                 <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
               </div>
-              <AttendControl needsQr qrDone={qrComplete(s)} pending={pending[s.sid]} absentLabel="결과" {...absentProps(s)} meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
+              <AttendControl mark={markFor(s)} resolve={resolveFor(s)} pending={pending[s.sid]} absentLabel="결과" presentCaption="출석 인정" {...absentProps(s)} meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
             </li>
           ))}
         </ul>

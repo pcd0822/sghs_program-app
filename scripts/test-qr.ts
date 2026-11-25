@@ -11,7 +11,7 @@ import { deleteApp, initializeApp as initClient, type FirebaseApp } from 'fireba
 import { connectAuthEmulator, getAuth, signInWithCustomToken } from 'firebase/auth';
 import { connectFirestoreEmulator, doc, getDoc, getFirestore } from 'firebase/firestore';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
-import { attendStatus } from '../shared/attendance';
+import { classStatus, programMarkOf, programStatusOf, qrComplete, type AttendRecord, type QrRecord } from '../shared/attendance';
 import { callAs, check, db, finish, resetApplications, setPeriod, studentToken } from './emu-util';
 
 const DATE = '2026-12-01';
@@ -26,6 +26,7 @@ const ids = secrets.map((s) => s.id);
 const subjects = ids.filter((id) => teachers.get(id)!.homeroom === null && !teachers.get(id)!.isAdmin);
 const [subjectT, otherT] = subjects;
 const homeroom1 = ids.find((id) => teachers.get(id)!.homeroom === 1)!;
+const homeroom2 = ids.find((id) => teachers.get(id)!.homeroom === 2)!;
 if (!otherT) throw new Error('담임 아닌 교과 교사가 2명 이상 필요해요(seed 확인).');
 await db.doc(`courses/${COURSE}`).update({ teacherIds: [subjectT] });
 
@@ -54,6 +55,7 @@ const teacherClaims = (tid: string) => {
 const S = await clientAs(`t_${subjectT}`, teacherClaims(subjectT));
 const O = await clientAs(`t_${otherT}`, teacherClaims(otherT));
 const H1 = await clientAs(`t_${homeroom1}`, teacherClaims(homeroom1));
+const H2 = await clientAs(`t_${homeroom2}`, teacherClaims(homeroom2));
 const ST = await clientAs('s_30101', { role: 'student', sid: '30101', classNo: 1 });
 const s1 = ST.idToken;
 const s2 = await studentToken('30201');
@@ -126,15 +128,21 @@ check('종료 체크 + 시작 시각 함께 돌려줌', r.result?.ok === true &&
 r = await run(H1.idToken, 'markQrIncomplete', { courseId: COURSE });
 check('담임(미배정): 강좌 일괄 처리 불가', r.error?.status === 'PERMISSION_DENIED');
 
-// ── 판정 기준(shared/attendance.ts): 프로그램 있는 날은 QR 둘 다 찍어야 출석
+// ── 판정 기준(shared/attendance.ts): 기본은 미체크. QR 을 다 찍거나 교사가 출석을 눌러야 출석
 const e1 = (await db.doc(`enrollments/${COURSE}__30101`).get()).data()!;
 const e2 = (await db.doc(`enrollments/${COURSE}__30201`).get()).data()!;
-check('QR 둘 다 찍음 + 기록 없음 → 출석', attendStatus(undefined, [e1]) === 'present');
-check('QR 하나도 안 찍음 + 기록 없음 → QR 미완료(출석 아님)', attendStatus(undefined, [e2]) === 'qr');
-check('그날 프로그램 없음 → 출석', attendStatus(undefined, []) === 'present');
-check('결석 체크가 QR 보다 먼저', attendStatus({ absent: true }, [e1]) === 'absent');
-check('출석 인정이면 QR 없어도 출석', attendStatus({ present: true }, [e2]) === 'present');
-check('예전 기록(absent:false)만으로는 출석 아님', attendStatus({ absent: false }, [e2]) === 'qr');
+const prog = (rec: AttendRecord | undefined, e: QrRecord) => programStatusOf(programMarkOf(rec, [subjectT]), qrComplete(e));
+check('학급: QR 둘 다 찍음 + 기록 없음 → 출석(담임이 안 눌러도)', classStatus(undefined, [e1]) === 'present');
+check('학급: QR 안 찍음 + 기록 없음 → 미체크', classStatus(undefined, [e2]) === 'none');
+check('학급: 그날 프로그램 없음 + 기록 없음 → 미체크(출석 아님)', classStatus(undefined, []) === 'none');
+check('학급: 담임 출석 체크 → 출석', classStatus({ present: true, updatedBy: homeroom2 }, [e2]) === 'present');
+check('학급: 결석 체크가 QR 보다 먼저', classStatus({ absent: true }, [e1]) === 'absent');
+check('프로그램: QR 둘 다 → 출석', prog(undefined, e1) === 'present');
+check('프로그램: QR 미완료 → QR 미완료', prog(undefined, e2) === 'qr');
+check('프로그램: 담임 결석 → 결석', prog({ absent: true, updatedBy: homeroom2 }, e1) === 'absent');
+check('프로그램: 담당 교사 출석 인정 → 출석', prog({ present: true, updatedBy: subjectT }, e2) === 'present');
+check('프로그램: 담임 출석 체크만으로는 출석 아님', prog({ present: true, updatedBy: homeroom2 }, e2) === 'qr');
+check('예전 기록(absent:false)만으로는 출석 아님', prog({ absent: false }, e2) === 'qr' && classStatus({ absent: false }, [e2]) === 'none');
 
 // 출석 인정한 학생은 일괄 결과 처리에서 빠진다
 r = await run(S.idToken, 'setAttendance', { date: DATE, sid: '30201', mark: 'present' });
@@ -148,6 +156,10 @@ a2p = (await db.doc(`attendance/${DATE}__30201`).get()).data();
 check('인정 취소 → QR 기준으로 돌아감', r.result?.ok === true && a2p?.present === false && a2p?.absent === false);
 r = await run(S.idToken, 'setAttendance', { date: DATE, sid: '30201', mark: 'weird' });
 check('이상한 값 거부', r.error?.status === 'INVALID_ARGUMENT');
+
+// 담임이 학급출결에서 "출석"을 눌러도 프로그램 QR 미완료는 일괄 결과 처리 대상
+r = await run(H2.idToken, 'setAttendance', { date: DATE, sid: '30201', mark: 'present' });
+check('담임 2반: 학급출결 출석 체크', r.result?.ok === true, r.error?.message);
 
 r = await run(S.idToken, 'markQrIncomplete', { courseId: COURSE });
 check('담당 교사: 미완료 1명 결과 처리', r.result?.changed === 1, JSON.stringify(r.result ?? r.error));

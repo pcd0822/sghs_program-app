@@ -1,6 +1,6 @@
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { Check, ClipboardCheck, Download, Inbox, Minus, PartyPopper, X } from 'lucide-react';
-import { attendMarkOf, qrComplete, statusOf, type AttendStatus, type QrRecord } from '@shared/attendance';
+import { classStatus as classStatusFrom, programMarkOf, programStatusOf, qrComplete, type AttendStatus, type QrRecord } from '@shared/attendance';
 import { useMemo, useState } from 'react';
 import { OPERATING_DATES, TIME_ZONE } from '@shared/constants';
 import { useQueryDocs } from '@/data/live';
@@ -30,6 +30,8 @@ interface Row {
   courses: string;
   att?: AttendanceDoc;
   st: AttendStatus;
+  /** 교사가 직접 출석을 눌러 출석인지(아니면 QR 로 출석) */
+  manual: boolean;
 }
 
 type Enr = QrRecord & { sid: string; date: string; courseId: string };
@@ -45,14 +47,14 @@ export default function AttendancePage() {
   const att = useQueryDocs<AttendanceDoc>(`admin-att-${date}`, () => query(collection(db, 'attendance'), where('date', '==', date)));
   const attMap = useMemo(() => toAttendanceMap(att), [att]);
   // 그날 수강 기록(시작·종료 QR 찍은 시각). 수강신청자 명렬표(프로그램)는 QR 을 다 찍어야 출석.
-  // 학급 명렬표·결석만 보기는 학급출결 기준(체크 안 하면 출석).
+  // 학급 명렬표·결석만 보기는 학급출결 기준(기본 미체크, 담임 출석 체크 또는 그날 QR 다 찍음 → 출석).
   const enr = useQueryDocs<Enr>(`admin-enr-${date}`, () => query(collection(db, 'enrollments'), where('date', '==', date)));
   const enrBySid = useMemo(() => {
     const m = new Map<string, Enr[]>();
     for (const e of enr ?? []) m.set(e.sid, [...(m.get(e.sid) ?? []), e]);
     return m;
   }, [enr]);
-  const classStatus = (sid: string): AttendStatus => (attMap.get(sid)?.absent ? 'absent' : 'present');
+  const classStatus = (sid: string): AttendStatus => classStatusFrom(attMap.get(sid), enrBySid.get(sid) ?? []);
   const nameOf = new Map(a.students.map((s) => [s.sid, s.name]));
   const coursesOf = (sid: string, d: string) =>
     Object.values(a.applications.get(sid)?.items ?? {})
@@ -64,14 +66,16 @@ export default function AttendancePage() {
   const course = dayCourses.find((c) => c.id === courseId) ?? dayCourses[0] ?? null;
 
   // 지금 보는 명렬표의 줄
+  // 학급 명렬표 전체 줄(결석만 보기도 통계는 반 전체로 센다)
+  const classRows: Row[] =
+    view === 'course'
+      ? []
+      : a.students
+          .filter((s) => cls === 'all' || s.classNo === cls)
+          .map((s) => ({ sid: s.sid, name: s.name, courses: coursesOf(s.sid, date), att: attMap.get(s.sid), st: classStatus(s.sid), manual: !!attMap.get(s.sid)?.present }));
   const rows: Row[] = (() => {
-    const inClass = (classNo: number) => cls === 'all' || classNo === cls;
-    if (view === 'absent' || view === 'class') {
-      const all = a.students
-        .filter((s) => inClass(s.classNo))
-        .map((s) => ({ sid: s.sid, name: s.name, courses: coursesOf(s.sid, date), att: attMap.get(s.sid), st: classStatus(s.sid) }));
-      return view === 'absent' ? all.filter((r) => r.st === 'absent').sort((x, y) => x.sid.localeCompare(y.sid)) : all;
-    }
+    if (view === 'absent') return classRows.filter((r) => r.st === 'absent').sort((x, y) => x.sid.localeCompare(y.sid));
+    if (view === 'class') return classRows;
     if (!course) return [];
     return [...a.applications.values()]
       .filter((app) => app.items?.[course.id])
@@ -79,14 +83,15 @@ export default function AttendancePage() {
       .map((app) => {
         // 수강신청자 명렬표는 이 강좌 QR 기준
         const e = (enrBySid.get(app.sid) ?? []).filter((x) => x.courseId === course.id);
-        const st = statusOf(attendMarkOf(attMap.get(app.sid)), true, !!enr && e.length > 0 && e.every(qrComplete));
-        return { sid: app.sid, name: nameOf.get(app.sid) ?? app.name, courses: course.name, att: attMap.get(app.sid), st };
+        const mark = programMarkOf(attMap.get(app.sid), course.teacherIds);
+        const st = programStatusOf(mark, !!enr && e.length > 0 && e.every(qrComplete));
+        return { sid: app.sid, name: nameOf.get(app.sid) ?? app.name, courses: course.name, att: attMap.get(app.sid), st, manual: mark === 'present' };
       });
   })();
 
-  const absentCount = rows.filter((r) => r.st === 'absent').length;
-  const qrCount = rows.filter((r) => r.st === 'qr').length;
-  const total = view === 'course' ? rows.length : a.students.filter((s) => cls === 'all' || s.classNo === cls).length;
+  const pool = view === 'course' ? rows : classRows;
+  const count = (st: AttendStatus) => pool.filter((r) => r.st === st).length;
+  const [absentCount, qrCount, noneCount, presentCount, total] = [count('absent'), count('qr'), count('none'), count('present'), pool.length];
 
   async function exportAll() {
     setBusy(true);
@@ -107,8 +112,10 @@ export default function AttendancePage() {
           const k = `${d}__${s.sid}`;
           const x = attById.get(k);
           const es = enrById.get(k) ?? [];
-          const qr = es.length ? (es.every(qrComplete) ? '완료' : x?.present ? '미완료(출석 인정)' : '미완료') : '';
-          out.push([formatDate(d), s.sid, s.classNo, s.name, coursesOf(s.sid, d), x?.absent ? '결석(결과)' : '출석', qr, x?.updatedByName ?? '', x ? formatDateTime(x.updatedAt) : '']);
+          const qr = es.length ? (es.every(qrComplete) ? '완료' : '미완료') : '';
+          const cs = classStatusFrom(x, es);
+          const classText = cs === 'absent' ? '결석(결과)' : cs === 'present' ? (x?.present ? '출석' : '출석(QR)') : '미체크';
+          out.push([formatDate(d), s.sid, s.classNo, s.name, coursesOf(s.sid, d), classText, qr, x?.updatedByName ?? '', x ? formatDateTime(x.updatedAt) : '']);
         }
       }
       await downloadXlsx(`출결기록_${stamp()}.xlsx`, [{ name: '출결 기록', rows: out }]);
@@ -125,7 +132,7 @@ export default function AttendancePage() {
         icon={ClipboardCheck}
         tone="mint"
         title="출결 조회"
-        desc="담임의 결석 체크와 교과 교사의 결과 체크는 같은 기록이에요. 학급 명렬표는 체크가 없으면 출석, 수강신청자 명렬표(프로그램)는 시작·종료 QR을 둘 다 찍었거나 선생님이 출석 인정해야 출석이에요."
+        desc="담임의 결석 체크와 교과 교사의 결과 체크는 같은 기록이에요. 처음엔 모두 미체크이고, 학급 명렬표는 담임이 출석을 눌렀거나 그날 프로그램 QR을 다 찍으면 출석, 수강신청자 명렬표(프로그램)는 그 강좌 시작·종료 QR을 둘 다 찍었거나 담당 선생님이 출석 인정해야 출석이에요."
         actions={
           <SmallButton onClick={exportAll} disabled={busy}>
             <Download size={16} aria-hidden />
@@ -183,10 +190,10 @@ export default function AttendancePage() {
         </PillSelect>
       )}
 
-      <div className={`grid gap-3 lg:max-w-2xl ${view === 'course' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:max-w-2xl">
         <Stat label={view === 'course' ? '신청자' : '재적'} value={total} />
-        <Stat label="출석" value={total - absentCount - qrCount} tone="green" />
-        {view === 'course' && <Stat label="QR 미완료" value={qrCount} tone={qrCount ? 'orange' : 'default'} />}
+        <Stat label="출석" value={presentCount} tone="green" />
+        {view === 'course' ? <Stat label="QR 미완료" value={qrCount} tone={qrCount ? 'orange' : 'default'} /> : <Stat label="미체크" value={noneCount} />}
         <Stat label="결석·결과" value={absentCount} tone={absentCount ? 'red' : 'default'} />
       </div>
 
@@ -218,7 +225,7 @@ export default function AttendancePage() {
                   <td className="tabular-nums">{r.sid}</td>
                   <td className="font-bold">{r.name}</td>
                   <td>
-                    <StatusMark st={r.st} manual={!!r.att?.present} />
+                    <StatusMark st={r.st} manual={r.manual} />
                   </td>
                   {view !== 'course' && <td className="text-[13px]">{r.courses || <span className="text-zinc-300">—</span>}</td>}
                   <td className="text-[13px] whitespace-nowrap text-sub">{r.att?.updatedByName ? `${r.att.updatedByName} · ${formatDateTime(r.att.updatedAt)}` : <span className="text-zinc-300">—</span>}</td>
@@ -237,7 +244,8 @@ function StatusMark({ st, manual }: { st: AttendStatus; manual: boolean }) {
   const look = {
     absent: ['bg-rose-50 text-rose-600 ring-rose-200', 'bg-rose-500', X, '결석·결과'],
     qr: ['bg-amber-50 text-amber-700 ring-amber-200', 'bg-amber-500', Minus, 'QR 미완료'],
-    present: ['bg-white text-emerald-700 ring-line', 'bg-emerald-500', Check, manual ? '출석(인정)' : '출석'],
+    none: ['bg-white/60 text-zinc-500 ring-line', 'bg-zinc-300', Minus, '미체크'],
+    present: ['bg-white text-emerald-700 ring-line', 'bg-emerald-500', Check, manual ? '출석(체크)' : '출석(QR)'],
   } as const;
   const [box, dot, Icon, label] = look[st];
   return (

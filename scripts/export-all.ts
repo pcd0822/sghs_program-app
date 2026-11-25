@@ -7,6 +7,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import * as XLSX from 'xlsx';
+import { classStatus } from '../shared/attendance';
 import { OPERATING_DATES } from '../shared/constants';
 import { formatDate } from '../shared/text';
 import { connect } from './admin-connect';
@@ -21,7 +22,7 @@ const get = async (name: string) => (await db.collection(name).get()).docs.map((
 const [students, secrets, teachers, courses, apps, attendance, inquiries, authors, enrollments] = await Promise.all(
   ['students', 'studentSecrets', 'teachers', 'courses', 'applications', 'attendance', 'inquiries', 'inquiryAuthors', 'enrollments'].map(get),
 );
-// 출결: 운영 날짜 × 학생 전부. 학급출결(체크 없으면 출석) + 그날 프로그램 QR 완료 여부.
+// 출결: 운영 날짜 × 학생 전부. 학급출결(기본 미체크, 담임 출석 또는 그날 QR 다 찍음 → 출석) + 그날 프로그램 QR 완료 여부.
 const attById = new Map(attendance.map((x) => [`${x.date}__${x.sid}`, x]));
 const enrByDaySid = new Map<string, Record<string, any>[]>();
 for (const e of enrollments) {
@@ -35,8 +36,10 @@ const attendanceRows = OPERATING_DATES.flatMap((d) =>
       const k = `${d}__${st.sid}`;
       const x = attById.get(k);
       const enr = enrByDaySid.get(k) ?? [];
-      const qr = enr.length ? (enr.every((e) => typeof e.qrStartAt === 'number' && typeof e.qrEndAt === 'number') ? '완료' : x?.present ? '미완료(출석 인정)' : '미완료') : '';
-      return [formatDate(d), st.sid, st.classNo, x?.absent ? '결석(결과)' : '출석', qr, x?.updatedByName ?? '', time(x?.updatedAt)];
+      const qr = enr.length ? (enr.every((e) => typeof e.qrStartAt === 'number' && typeof e.qrEndAt === 'number') ? '완료' : '미완료') : '';
+      const cs = classStatus(x, enr);
+      const classText = cs === 'absent' ? '결석(결과)' : cs === 'present' ? (x?.present ? '출석' : '출석(QR)') : '미체크';
+      return [formatDate(d), st.sid, st.classNo, classText, qr, x?.updatedByName ?? '', time(x?.updatedAt)];
     }),
 );
 const phone = new Map(secrets.map((s) => [s._id, s.phone]));

@@ -8,6 +8,7 @@
 import { randomBytes } from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { programMarkOf, type AttendRecord } from '../../shared/attendance';
 import { QR_OPEN_MS } from '../../shared/constants';
 import { canUseQr, type Course, type CourseQr, type QrPhase } from '../../shared/types';
 import { db, fail } from './app';
@@ -104,8 +105,9 @@ export const markQrIncomplete = onCall(async (req) => {
 
   const attRefs = targets.map((e) => db.collection('attendance').doc(attendanceId(course.date, String(e.get('sid')))));
   const attSnaps = await db.getAll(...attRefs);
-  // 이미 결과이거나 교사가 "출석 인정"한 학생은 건드리지 않는다.
-  const todo = targets.filter((_, i) => attSnaps[i].get('absent') !== true && attSnaps[i].get('present') !== true);
+  // 이미 결과이거나 이 강좌 담당 교사가 "출석 인정"한 학생은 건드리지 않는다.
+  // 담임이 학급출결에서 누른 "출석"은 프로그램 출석으로 치지 않는다(shared/attendance.ts programMarkOf, 화면과 같은 기준).
+  const todo = targets.filter((_, i) => programMarkOf(attSnaps[i].data() as AttendRecord | undefined, course.teacherIds) === 'auto');
 
   const teacher = (await db.collection('teachers').doc(t.tid).get()).data();
   const byName = String(teacher?.name ?? '');

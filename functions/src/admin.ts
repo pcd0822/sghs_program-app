@@ -3,6 +3,7 @@
 //   복사본(신청 문서의 강좌명, 출석부 명단의 담당교사·이름, 출결 열람 교사)도 함께 맞춘다.
 // - adminAssign: 수동 배정(추가·변경·삭제). 마감 후에도 가능, 정원 초과는 경고만. 코드 중복·같은 날 선택 규칙은 지킨다.
 // - adminRecount: 신청 인원 수를 실제 신청 기록으로 다시 맞춘다.
+// - adminSubmit: 미제출 학생을 "제출"로 바꾼다. 신청 기간이 끝나도 가능. 빠진 강좌가 있으면 거부(학생 제출과 같은 기준).
 
 import { FieldPath, FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
@@ -20,8 +21,8 @@ import {
   type TeacherInput,
 } from '../../shared/admin';
 import { DEFAULT_DAY_NOTES } from '../../shared/defaults';
-import { checkPersonalRules, progress, type AppItem, type Application } from '../../shared/rules';
-import { parseSid, phoneDigits } from '../../shared/text';
+import { checkPersonalRules, missingText, progress, type AppItem, type Application } from '../../shared/rules';
+import { formatDate, parseSid, phoneDigits } from '../../shared/text';
 import { isBaseDate } from '../../shared/timetable';
 import type { Course, TimetableConfig } from '../../shared/types';
 import { auth, db, fail } from './app';
@@ -350,6 +351,29 @@ export const adminAssign = onCall(async (req) => {
 
   for (const d of new Set(res.dates)) await refreshAttendanceViewers(d, sid);
   return { ok: true, warning: res.warning };
+});
+
+// ───────────────────────── 대신 제출 ─────────────────────────
+
+export const adminSubmit = onCall(async (req) => {
+  requireAdmin(req);
+  const parsed = parseSid((req.data as { sid?: unknown } | null)?.sid);
+  if (!parsed) fail('학번이 올바르지 않아요.', 'invalid-argument');
+  const courses = [...(await allCourses()).values()];
+  const appRef = db.doc(`applications/${parsed.sid}`);
+  return db.runTransaction(async (tx) => {
+    const appSnap = await tx.get(appRef);
+    const app = appSnap.data() as Application | undefined;
+    if (!app) fail('이 학생은 아직 신청한 강좌가 없어요.', 'failed-precondition');
+    if (app.submitted) return { ok: true, already: true };
+    const p = progress(courses, app.items ?? {});
+    if (!p.complete) {
+      fail(`빠진 강좌가 있어 제출할 수 없어요: ${p.missing.map((m) => missingText(m, formatDate)).join(', ')}`, 'failed-precondition', 'INCOMPLETE');
+    }
+    const now = Date.now();
+    tx.update(appRef, { submitted: true, submittedAt: now, updatedAt: now });
+    return { ok: true, already: false };
+  });
 });
 
 // ───────────────────────── 인원 수 다시 맞추기 ─────────────────────────

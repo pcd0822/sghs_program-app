@@ -9,7 +9,8 @@ import { useQueryDocs } from '@/data/live';
 import { db } from '@/lib/firebase';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Pill } from '@/ui/Pill';
-import { AttendCheck, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
+import { attendMarkOf, classStatusOf, qrComplete, type AttendMark } from '@shared/attendance';
+import { AttendControl, Avatar, QrMarks, toAttendanceMap, useAttendanceToggle, type AttendanceDoc } from './attendance';
 import { useTeacher } from './TeacherData';
 
 const CLASSES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -121,9 +122,27 @@ function AttendanceTab({
     return m;
   }, [enr]);
   const { pending, toggle } = useAttendanceToggle(date);
-  // 학급출결은 체크 하나(결석 ↔ 출석). 처리 중인 값을 참/거짓으로.
-  const absentPending = (sid: string) => (pending[sid] === undefined ? undefined : pending[sid] === 'absent');
-  const absent = students.filter((s) => attMap.get(s.sid)?.absent).length;
+  // 기본은 미체크. 담임이 출석을 누르거나, 그날 프로그램 QR 을 다 찍은 학생은 출석(shared/attendance.ts).
+  const qrDoneOf = (sid: string) => {
+    const es = enrBySid.get(sid) ?? [];
+    return es.length > 0 && es.every(qrComplete);
+  };
+  const resolveFor = (sid: string) => (m: AttendMark) => classStatusOf(m, (enrBySid.get(sid)?.length ?? 0) > 0, qrDoneOf(sid));
+  const statusFor = (sid: string) => resolveFor(sid)(attendMarkOf(attMap.get(sid)));
+  const control = (sid: string) => (
+    <AttendControl
+      mark={attendMarkOf(attMap.get(sid))}
+      resolve={resolveFor(sid)}
+      pending={pending[sid]}
+      absentLabel="결석"
+      presentCaption="출석 체크"
+      meta={attMap.get(sid)}
+      onChange={(v) => toggle(sid, v)}
+    />
+  );
+  const ready = !!att && !!enr;
+  const absent = ready ? students.filter((s) => statusFor(s.sid) === 'absent').length : 0;
+  const present = ready ? students.filter((s) => statusFor(s.sid) === 'present').length : 0;
 
   return (
     <div>
@@ -144,10 +163,12 @@ function AttendanceTab({
         </div>
         <div className="mt-2 flex gap-2 text-[14px] font-bold">
           <span className="rounded-full bg-soft px-3 py-1">재적 {students.length}</span>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">출석 {students.length - absent}</span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">출석 {present}</span>
           <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-600">결석 {absent}</span>
+          <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-500">미체크 {ready ? students.length - present - absent : 0}</span>
         </div>
       </div>
+      <p className="mt-2 text-[13px] text-sub">처음엔 모두 "미체크"예요. 그날 프로그램 QR을 시작·종료 둘 다 찍은 학생은 저절로 출석이 되고, 나머지는 "출석"이나 "결석"을 눌러 주세요. 켜진 버튼을 한 번 더 누르면 지워져요.</p>
 
       {/* 넓은 화면: 한 줄에 한 학생, 칸을 나눈 표 */}
       <div className="glass mt-3 hidden overflow-hidden rounded-[28px] px-3 pb-2 md:block">
@@ -167,9 +188,9 @@ function AttendanceTab({
             const todays = Object.values(appBySid.get(s.sid)?.items ?? {}).filter((it) => it.date === date);
             const phone = phoneBySid.get(s.sid);
             const enrs = enrBySid.get(s.sid) ?? [];
-            const isAbsent = !!attMap.get(s.sid)?.absent;
+            const st = statusFor(s.sid);
             return (
-              <tr key={s.sid} className={isAbsent ? 'bg-rose-50/50' : 'hover:bg-soft/60'}>
+              <tr key={s.sid} className={st === 'absent' ? 'bg-rose-50/50' : 'hover:bg-soft/60'}>
                 <td className="border-b border-line py-2 pl-2 font-semibold text-sub tabular-nums">{s.number}</td>
                 <td className="border-b border-line py-2">
                   <span className="flex items-center gap-2.5">
@@ -196,9 +217,7 @@ function AttendanceTab({
                     <span className="text-zinc-400">—</span>
                   )}
                 </td>
-                <td className="border-b border-line py-2 pr-2">
-                  <AttendCheck checked={isAbsent} pending={absentPending(s.sid)} onLabel="결석" offLabel="출석" meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v ? 'absent' : 'auto')} />
-                </td>
+                <td className="border-b border-line py-2 pr-2">{control(s.sid)}</td>
               </tr>
             );
           })}
@@ -229,14 +248,7 @@ function AttendanceTab({
                   </a>
                 )}
               </div>
-              <AttendCheck
-                checked={!!attMap.get(s.sid)?.absent}
-                pending={absentPending(s.sid)}
-                onLabel="결석"
-                offLabel="출석"
-                meta={attMap.get(s.sid)}
-                onChange={(v) => toggle(s.sid, v ? 'absent' : 'auto')}
-              />
+              {control(s.sid)}
             </li>
           );
         })}

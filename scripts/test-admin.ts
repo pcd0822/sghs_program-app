@@ -6,6 +6,7 @@
 
 import { getAuth } from 'firebase-admin/auth';
 import type { CourseInput } from '../shared/admin';
+import { requirements } from '../shared/rules';
 import type { Course } from '../shared/types';
 import { callAs, check, db, finish, resetApplications, setPeriod, studentToken } from './emu-util';
 
@@ -129,6 +130,26 @@ r = await callAs(ADMIN, 'adminRecount', {});
 check('어긋난 인원 수를 실제 신청 수로 고침', (await course('P27-1209')).count === 11);
 const shards = await db.collection('courses/P01-1130/shards').get();
 check('정원 없는 강좌는 shard 로 다시 셈', shards.docs.reduce((s, d) => s + Number(d.get('count')), 0) === 1);
+
+// ── 관리자 대신 제출(신청 기간이 닫혀 있어도)
+r = await callAs(NOT_ADMIN, 'adminSubmit', { sid: '30104' });
+check('admin 아니면 대신 제출 불가', r.error?.status === 'PERMISSION_DENIED');
+r = await callAs(ADMIN, 'adminSubmit', { sid: '30104' });
+check('빠진 강좌가 있으면 대신 제출 거부', r.error?.status === 'FAILED_PRECONDITION' && /빠진 강좌/.test(r.error?.message ?? ''), r.error?.message);
+const allC = (await db.collection('courses').get()).docs.map((d) => ({ ...(d.data() as Course), id: d.id }));
+const reqs = requirements(allC);
+for (const c of reqs.required) await callAs(ADMIN, 'adminAssign', { sid: '30105', add: c.id });
+for (const d of reqs.selectiveDates) {
+  for (const c of allC.filter((x) => x.date === d && x.category === '선택')) {
+    if ((await callAs(ADMIN, 'adminAssign', { sid: '30105', add: c.id })).result?.ok) break;
+  }
+}
+check('(준비) 30105 모두 배정, 아직 미제출', (await db.doc('applications/30105').get()).get('submitted') === false);
+r = await callAs(ADMIN, 'adminSubmit', { sid: '30105' });
+const app5 = (await db.doc('applications/30105').get()).data()!;
+check('마감 후에도 관리자는 미제출 → 제출', r.result?.ok === true && app5.submitted === true && typeof app5.submittedAt === 'number', r.error?.message);
+r = await callAs(ADMIN, 'adminSubmit', { sid: '30105' });
+check('이미 제출이면 그대로', r.result?.already === true);
 
 // ── 되돌리기
 await resetApplications();
