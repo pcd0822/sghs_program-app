@@ -6,3 +6,4 @@ export { adminAssign, adminPublish, adminRecount, adminSubmit } from './admin';
 export { answerInquiry, createInquiry, deleteInquiry, saveNotice } from './board';
 export { requestSignup, reviewSignup, updateProfile } from './profile';
 export { setLike } from './likes';
+export { courseContacts } from './contacts';

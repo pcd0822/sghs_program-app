@@ -1,5 +1,5 @@
-import { BookOpenCheck, ChevronLeft, ChevronRight, Inbox, QrCode } from 'lucide-react';
-import { useState } from 'react';
+import { BookOpenCheck, ChevronLeft, ChevronRight, Inbox, Phone, QrCode } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { call } from '@/lib/call';
 import { Button } from '@/ui/Button';
@@ -92,6 +92,20 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
   const attMap = toAttendanceMap(att);
   const { pending, toggle } = useAttendanceToggle(c.date);
   const list = [...(roster ?? [])].sort((a, b) => a.sid.localeCompare(b.sid));
+  // 연락처는 규칙상 브라우저가 직접 못 읽으므로 Functions(courseContacts)가 담당 교사인지 확인하고 건넨다.
+  // 수강생이 바뀔 때만 다시 받는다(실시간 수신 없음).
+  const sidKey = list.map((s) => s.sid).join(',');
+  const [phones, setPhones] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!sidKey) return;
+    let alive = true;
+    call<{ courseId: string }, { phones: Record<string, string> }>('courseContacts', { courseId: c.id })
+      .then((r) => alive && setPhones(r.phones))
+      .catch(() => {}); // 못 받으면 연락처 칸만 비운다(출석부는 그대로 쓴다)
+    return () => {
+      alive = false;
+    };
+  }, [c.id, sidKey]);
   // 이 강좌 시작·종료 QR 을 다 찍어야 출석. 교사가 결과/출석 인정을 누르면 그 값이 먼저(shared/attendance.ts).
   // 담임이 학급출결에서 누른 "출석"은 여기선 치지 않는다(프로그램에 빠진 학생이 보이도록).
   const markFor = (s: Enrollment) => programMarkOf(attMap.get(s.sid), c.teacherIds);
@@ -180,6 +194,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
             <tr>
               <th className="w-24 border-b border-line py-2.5 pl-2 font-semibold">학번</th>
               <th className="border-b border-line py-2.5 font-semibold">학생</th>
+              <th className="w-40 border-b border-line py-2.5 font-semibold">연락처</th>
               <th className="w-24 border-b border-line py-2.5 font-semibold">학급</th>
               <th className="w-72 border-b border-line py-2.5 pr-3 font-semibold">출석 QR</th>
               <th className="w-44 border-b border-line py-2.5 pr-2 text-right font-semibold">출결</th>
@@ -195,6 +210,9 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
                       <Avatar url={s.photoUrl} name={s.name} size={40} />
                       <span className="font-bold">{s.name}</span>
                     </span>
+                  </td>
+                  <td className="border-b border-line py-2">
+                    <PhoneLink phone={phones[s.sid]} />
                   </td>
                   <td className="border-b border-line py-2 text-sub tabular-nums">
                     {s.classNo}반 {s.number}번
@@ -219,6 +237,7 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-bold">{s.name}</p>
                 <p className="text-[13px] text-sub tabular-nums">{s.sid}</p>
+                <PhoneLink phone={phones[s.sid]} small />
                 <QrMarks start={s.qrStartAt} end={s.qrEndAt} />
               </div>
               <AttendControl mark={markFor(s)} resolve={resolveFor(s)} pending={pending[s.sid]} absentLabel="결과" presentCaption="출석 인정" {...absentProps(s)} meta={attMap.get(s.sid)} onChange={(v) => toggle(s.sid, v)} />
@@ -248,5 +267,15 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
         시작 QR과 종료 QR 중 하나라도 찍지 않았고, "출석 인정"도 받지 않은 학생이에요. 그날 출결 기록이 "결과"가 되고, 담임 선생님 학급출결에는 "결석"으로 보여요. 나중에 한 명씩 다시 고칠 수 있어요.
       </Modal>
     </main>
+  );
+}
+
+/** 누르면 바로 전화가 걸리는 연락처. 없으면 아무것도 그리지 않는다. */
+function PhoneLink({ phone, small }: { phone?: string; small?: boolean }) {
+  if (!phone) return null;
+  return (
+    <a href={`tel:${phone}`} className={`inline-flex items-center gap-1 text-brand-600 tabular-nums ${small ? 'text-[12px]' : 'min-h-11 text-[14px]'}`}>
+      <Phone size={small ? 12 : 13} aria-hidden /> {phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}
+    </a>
   );
 }
