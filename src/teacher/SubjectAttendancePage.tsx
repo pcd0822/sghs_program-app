@@ -270,12 +270,12 @@ function Roster({ c, onBack }: { c: Course; onBack(): void }) {
   );
 }
 
-/** 누르면 바로 전화가 걸리는 연락처. 없으면 아무것도 그리지 않는다. */
+/** 연락처 글자만 보여 준다(누르는 링크 아님 — 눌러도 새 창이 뜨지 않게, 11-27 사용자 요청). 없으면 아무것도 그리지 않는다. */
 function PhoneLink({ phone, small }: { phone?: string; small?: boolean }) {
   if (!phone) return null;
   return (
-    <a href={`tel:${phone}`} className={`inline-flex items-center gap-1 text-brand-600 tabular-nums ${small ? 'text-[12px]' : 'min-h-11 text-[14px]'}`}>
+    <span className={`inline-flex items-center gap-1 text-sub tabular-nums ${small ? 'text-[12px]' : 'text-[14px]'}`}>
       <Phone size={small ? 12 : 13} aria-hidden /> {phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}
-    </a>
+    </span>
   );
 }
